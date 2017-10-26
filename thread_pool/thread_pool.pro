@@ -16,4 +16,4 @@ SOURCES += main.cpp
 
 HEADERS  +=
 
-CONFIG += c++11
+CONFIG += c++11 thread
