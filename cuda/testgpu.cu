@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
+#include <time.h>
 
 #define BLOCKS 1024
 #define THREADS 1024
@@ -20,15 +21,19 @@ int main(int argc, char *argv[]){
 	dim3 block(1024, 1);
 	dim3 grid(1024, 1024);
 
+	printf("A %lf\n", clock() / (double) CLOCKS_PER_SEC);
 	cudaMalloc( (void **) &gpuInt, sizeof(int));
+	printf("B %lf\n", clock() / (double) CLOCKS_PER_SEC);
 	
 	// printf("Test 1\n");
 	// testgpu<<<grid, block>>>(gpuInt, 800000);
 	
-	printf("Test 2\n");
-	testgpu<<<1, 1>>>(gpuInt, 1024 * 1024 * 1024);
-
+	printf("C %lf\n", clock() / (double) CLOCKS_PER_SEC);
+	testgpu<<<8, 16>>>(gpuInt, 1024 * 1024 * 1024);
+	printf("D %lf\n", clock() / (double) CLOCKS_PER_SEC);
+	
 	cudaFree(gpuInt);
+	printf("E %lf\n", clock() / (double) CLOCKS_PER_SEC);
 
 	return 0;
 }

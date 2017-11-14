@@ -1,0 +1,3 @@
+- Executing 1 thread with long computation time makes the OS graphic interface laag, due to the CPU being overused. The reason must be investigated.
+- When the same program is run multiple times in parallel, it seems that GPU computations are done in parallel too. How they are scheduled could be investigated.
+- If you put timestamps between kernel calls, we can see that the calls are non-blocking. When you call cudaFree (probably cudaMemcpy too), your program waits for the GPU results.
