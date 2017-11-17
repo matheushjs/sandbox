@@ -1,8 +1,13 @@
-#include <limits.h>
 #include <stdio.h>
 #include "utils.h"
 
-#define BLOCKDIM 1024 // Must be power of 2
+#define REDUCE_BLOCKDIM 1024 // Must be power of 2
+#define FLOAT_MIN -275.0f
+#define FLOAT_MAX 275.0f
+
+/*****************************************/
+/**********REDUCE MAX MIN*****************/
+/*****************************************/
 
 __device__
 float maxKer(float a, float b){
@@ -37,8 +42,8 @@ void reduce_maxmin(const float * const vec, int vecSize, float * const max, floa
 
 	// Get shared memory (intermediate values)
 	// 'size' is expected to be at most 1024, so we're allocating at most 4kB of shared memory
-	__shared__ float maxVec[BLOCKDIM/2];
-	__shared__ float minVec[BLOCKDIM/2];
+	__shared__ float maxVec[REDUCE_BLOCKDIM/2];
+	__shared__ float minVec[REDUCE_BLOCKDIM/2];
 
 	// Copy elements from vec to shared memory, while doing the first iteration of the reduce
 	int step = size >> 1;
@@ -49,8 +54,8 @@ void reduce_maxmin(const float * const vec, int vecSize, float * const max, floa
 
 		// Elements out of bounds receive an identity value.
 		if(left >= vecSize){
-			maxVec[threadIdx.x] = *min;
-			minVec[threadIdx.x] = *max;
+			maxVec[threadIdx.x] = FLOAT_MIN;
+			minVec[threadIdx.x] = FLOAT_MAX;
 		} else if(right >= vecSize){
 			maxVec[threadIdx.x] = vec[left];
 			minVec[threadIdx.x] = vec[left];
@@ -81,6 +86,63 @@ void reduce_maxmin(const float * const vec, int vecSize, float * const max, floa
 	}
 }
 
+/*****************************************/
+/**********HISTOGRAM**********************/
+/*****************************************/
+
+__global__
+void histogram(const float * const vec, int * const bins, const float min, const float range, const int vecSize, const int numBins){
+	// DOC
+	// - Naive histogram
+	// - Will rely on atomic operations upon the global memory
+	// - 1D block and 1D thread organizations. Any numbers will do
+	int beg = blockIdx.x * blockDim.x + threadIdx.x;
+	int stride = blockDim.x * gridDim.x; // Total number of threads
+
+	while(beg < vecSize){
+		int bin = (vec[beg] - min) / range * numBins;
+		atomicAdd(&bins[bin], 1);
+		beg += stride;
+	}
+}
+
+/*****************************************/
+/**********SCAN***************************/
+/*****************************************/
+
+__global__
+void scan(const int * const bins, int * const accSum, int numBins){
+	// DOC
+	// - Hillis & Steele algorithm
+	// - inclusive scan
+	// - Single block, 1D threads
+	// - Total number of threads should equal at least numBins/2
+	// - numBins is assumed to be a power of 2
+	int idx = threadIdx.x;
+
+	// Copy bins to accSum
+	int i = idx;
+	while(i < numBins){
+		accSum[i] = bins[i];
+		i += blockDim.x;
+	}
+
+	__syncthreads();
+
+	int step = 1;
+	while(step != numBins){
+		int next = idx + step;
+		int val = accSum[idx] + accSum[next];
+		__syncthreads();
+
+		if(next < numBins)
+			accSum[next] = val;
+
+		__syncthreads();
+		step <<= 1;
+	}
+}
+
 void your_histogram_and_prefixsum(const float* const d_logLuminance,
                                   unsigned int* const d_cdf,
                                   float &min_logLum,
@@ -90,7 +152,9 @@ void your_histogram_and_prefixsum(const float* const d_logLuminance,
                                   const size_t numBins)
 {
 	int vecSize = numRows * numCols;
-	int numBlocks = vecSize / (double) BLOCKDIM + 1;
+	int numBlocks = vecSize / (double) REDUCE_BLOCKDIM + 1;
+
+	printf("Rows: %lu\nCols: %lu\nPixels: %lu\nBins: %lu\n\n", numRows, numCols, numCols*numRows, numBins);
 
 	/*
 	float *vector = (float *) malloc(sizeof(float) * vecSize);
@@ -113,11 +177,11 @@ void your_histogram_and_prefixsum(const float* const d_logLuminance,
 	checkCudaErrors(cudaMalloc(&d_max, sizeof(float)));
 	checkCudaErrors(cudaMalloc(&d_min, sizeof(float)));
 	checkCudaErrors(cudaMalloc(&d_lock, sizeof(int)));
-	checkCudaErrors(cudaMemset(d_max, -275, sizeof(float)));
-	checkCudaErrors(cudaMemset(d_min, 275, sizeof(float)));
+	checkCudaErrors(cudaMemset(d_max, FLOAT_MIN, sizeof(float)));
+	checkCudaErrors(cudaMemset(d_min, FLOAT_MAX, sizeof(float)));
 	checkCudaErrors(cudaMemset(d_lock, 0, sizeof(int)));
 
-	reduce_maxmin<<<numBlocks, BLOCKDIM>>>(d_logLuminance, vecSize, d_max, d_min, d_lock);
+	reduce_maxmin<<<numBlocks, REDUCE_BLOCKDIM>>>(d_logLuminance, vecSize, d_max, d_min, d_lock);
 	checkCudaErrors(cudaMemcpy(&min_logLum, d_min, sizeof(float), cudaMemcpyDeviceToHost));
 	checkCudaErrors(cudaMemcpy(&max_logLum, d_max, sizeof(float), cudaMemcpyDeviceToHost));
 
@@ -127,15 +191,18 @@ void your_histogram_and_prefixsum(const float* const d_logLuminance,
 
 	printf("Min: %f, Max: %f\n", min_logLum, max_logLum);
 
-	//TODO
-	/*
-		1) find the minimum and maximum value in the input logLuminance channel
-			 store in min_logLum and max_logLum
-		2) subtract them to find the range
-		3) generate a histogram of all the values in the logLuminance channel using
-			 the formula: bin = (lum[i] - lumMin) / lumRange * numBins
-		4) Perform an exclusive scan (prefix sum) on the histogram to get
-			 the cumulative distribution of luminance values (this should go in the
-			 incoming d_cdf pointer which already has been allocated for you)
-	*/
+
+
+
+	int *d_bins;
+	checkCudaErrors(cudaMalloc(&d_bins, sizeof(int) * numBins));
+	checkCudaErrors(cudaMemset(d_bins, 0, sizeof(int) * numBins));
+	histogram
+		<<<numBlocks, REDUCE_BLOCKDIM>>>
+		(d_logLuminance, d_bins, min_logLum, max_logLum - min_logLum, vecSize, numBins);
+	
+
+	// We will reuse the d_bins vector
+	scan<<<1, 512>>>(d_bins, (int *) d_cdf, numBins);
+	checkCudaErrors(cudaFree(d_bins));
 }
