@@ -5,34 +5,6 @@
 
 using std::cout;
 
-__device__
-void swap(unsigned int *a, unsigned int *b){
-	unsigned int aux;
-	if(*a > *b){
-		aux = *a;
-		*a = *b;
-		*b = aux;
-	}
-}
-
-__global__
-void oddeven_sort(unsigned int * const d_vec, int vecSize){
-	int init = threadIdx.x * 2; // First element to be analyzed by this thread
-	int stride = blockDim.x * 2;
-
-	int step;
-	int increment = 1;
-	for(step = 0; step < vecSize; step++){
-		int curElem;
-		for(curElem = init; curElem < vecSize - 1; curElem += stride){
-			swap(d_vec + init, d_vec + init + 1);
-		}
-
-		init += increment;
-		increment *= -1; // Next iteration, undo the sum on init
-	}
-}
-
 /* Applies an AND mask to the given number 'num' shifted right by 'shift'.
  *
  * num     = 000101
@@ -47,20 +19,18 @@ int masked_key(const unsigned int num, const unsigned int mask, const unsigned i
 	return (num >> shift) & mask;
 }
 
-/* SUMMARY
- * ===
- *
+/*
  * 'vec' is a vector of unsigned integers, with 32 bits each
- * Each element of the vector can be seen as 4 groups of 8 bits
- * We want to get a histogram of the vector, when considering each of these 4 groups separately
- * If we are focusing on the second least significant group, for example, 0xFF00 would add up in the histogram index 255
+ * Each element of the vector can be seen as 8 groups of 4 bits
+ * We want to get a histogram of the vector, when considering each of these 8 groups separately
+ * If we are focusing on the second least significant group, for example, 0xFFF0 would add up in the histogram index 15
  *
- * Since we work with values from 0 to 2^8-1, we need the 'output' vector for be 256 elements long
+ * Since we work with values from 0 to 2^4-1, we need the 'output' vector for be 16 elements long
  * The caller is not required to set the 'output' vector to 0.
  *
- * The caller must specify which group of 8 bits they want to consider, by passing a 'shift'
- * Shift represents how much each element in the vector will be shifted left before the 8 least significant bits are read.
- * In practice, if 'shift' is 0, we consider the least significant group. If it's 8, we consider the second least significant group.
+ * The caller must specify which group of 4 bits they want to consider, by passing a 'shift'
+ * Shift represents how much each element in the vector will be shifted left before the 4 least significant bits are read.
+ * In practice, if 'shift' is 0, we consider the least significant group. If it's 4, we consider the second least significant group.
  *
  *
  * Thread Organization
@@ -82,44 +52,125 @@ void histogram(const unsigned int * const vec, unsigned int * const output, cons
 
 	// Reset the output vector
 	int i;
-	for(i = myIdx; i < 256; i += totalThreads)
+	for(i = myIdx; i < 16; i += totalThreads)
 		output[i] = 0;
 	__syncthreads();
 
 	for(i = initIdx; i < endIdx && i < vecSize; i++){
-		const int histIdx = masked_key(vec[i], 0xFF, shift);
+		const int histIdx = masked_key(vec[i], 0xF, shift);
 		atomicAdd(output + histIdx, 1);
 	}
 }
+
+
+
+
+// Step should be 1, 2, 3... up to log2(vecSize)
+__global__
+void blelloch_reduce(unsigned int *d_vec, int vecSize, int step){
+	const int leftDist = 1 << (step - 1);
+	const int myIdx = blockDim.x * blockIdx.x + threadIdx.x;
+	const int myElement = (1 << step) * (myIdx + 1) - 1;
+
+	if(myElement >= vecSize) return;
+	d_vec[myElement] = d_vec[myElement] + d_vec[myElement - leftDist];
+}
+
+__global__
+void blelloch_downsweep(unsigned int *d_vec, int vecSize, int step){
+	const int leftDist = 1 << (step - 1);
+	const int myIdx = blockDim.x * blockIdx.x + threadIdx.x;
+	const int myElement = (1 << step) * (myIdx + 1) - 1;
+
+	if(myElement >= vecSize) return;
+
+	int aux = d_vec[myElement];
+	d_vec[myElement] = d_vec[myElement] + d_vec[myElement - leftDist];
+	d_vec[myElement - leftDist] = aux;
+}
+
+unsigned int *xscan(const unsigned int *vec, int vecSize){
+	int size = 1;
+	int nSteps = 0;
+	while(size < vecSize){
+		size <<= 1; // Lowest power of 2 greater than vecSize
+		nSteps++;   // The power itself
+	}
+
+	unsigned int *d_vec;
+	cudaMalloc(&d_vec, sizeof(int) * size);
+	cudaMemcpy(d_vec, vec, sizeof(int) * vecSize, cudaMemcpyHostToDevice);
+
+	// First reduce
+	for(int step = 1; step <= nSteps; step++){
+		const int operationBlock = 1 << step;
+		const int thrCount = vecSize / operationBlock;
+
+		const int thrPerBlock = 1024; //Maximize threads in a block
+		const int nBlocks = thrCount / thrPerBlock + 1;
+
+		blelloch_reduce<<<nBlocks, thrPerBlock>>>(d_vec, size, step);
+	}
+
+	// Put identity value into last element
+	cudaMemset(d_vec + vecSize - 1, 0, sizeof(int));
+
+	// Now downsweep
+	for(int step = nSteps; step >= 1; step--){
+		const int operationBlock = 1 << step;
+		const int thrCount = vecSize / operationBlock;
+
+		const int thrPerBlock = 1024; //Maximize threads in a block
+		const int nBlocks = thrCount / thrPerBlock + 1;
+
+		blelloch_downsweep<<<nBlocks, thrPerBlock>>>(d_vec, size, step);
+	}
+
+	unsigned int *result = (unsigned int *) malloc(sizeof(int) * vecSize);
+	cudaMemcpy(result, d_vec, sizeof(int) * vecSize, cudaMemcpyDeviceToHost);
+
+	cudaFree(d_vec);
+
+	return result;
+}
+
+
+
+/* This function takes in a vector 'vec'
+ * And places in the device vector 'd_predicates' the predicates of each element of 'vec'
+ *
+ * The predicate for an element E is [ (E >> shift) & 0xF ]
+ */
+void make_predicate(const unsigned int *vec, int vecSize, int shift, const unsigned int *d_predicates){
+
+}
+
 
 void unrelated_stuff(){
 	thrust::host_vector<unsigned int> h_vec(16);
 
 	for(int i = 0; i < 16; i++)
-		h_vec[i] = 16 - i;
-
+		h_vec[i] = 5;
 	thrust::device_vector<unsigned int> d_vec = h_vec;
 
-	oddeven_sort<<<1, 8>>>(thrust::raw_pointer_cast(d_vec.data()), 16);
-
-	h_vec = d_vec;
-
-	for(int i = 0; i < 16; i++)
-		cout << h_vec[i] << " ";
-	cout << "\n";
-
-	for(int i = 0; i < 16; i++)
-		h_vec[i] = 5;
-	d_vec = h_vec;
-	thrust::device_vector<unsigned int> d_hist(256);
+	thrust::device_vector<unsigned int> d_hist(16);
 	histogram<<<1, 16>>>(thrust::raw_pointer_cast(d_vec.data()),
 	                thrust::raw_pointer_cast(d_hist.data()),
 	                0, 16);
 
 	thrust::host_vector<unsigned int> h_hist = d_hist;
-	for(int i = 0; i < 256; i++)
+	for(int i = 0; i < 16; i++)
 		cout << h_hist[i] << " ";
 	cout << "\n";
+
+	// h_vec is a bunch of 5's
+	unsigned int *scanned = xscan(thrust::raw_pointer_cast(h_vec.data()), 8);
+
+	for(unsigned int i = 0; i < 8; i++)
+		cout << scanned[i] << " ";
+	cout << "\n";
+
+	free(scanned);
 }
 
 void your_sort(unsigned int* const d_inputVals,
