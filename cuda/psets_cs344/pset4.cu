@@ -3,6 +3,8 @@
 #include <thrust/device_vector.h>
 #include <iostream>
 
+#define RPC raw_pointer_cast
+
 using std::cout;
 
 /* Applies an AND mask to the given number 'num' shifted right by 'shift'.
@@ -41,7 +43,7 @@ int masked_key(const unsigned int num, const unsigned int mask, const unsigned i
  * Each thread will operate directly on the 'output' vector.
  */
 __global__
-void histogram(const unsigned int * const vec, unsigned int * const output, const int shift, const int vecSize){
+void d_histogram(const unsigned int * const vec, unsigned int * const output, const int shift, const int vecSize){
 	const int myIdx = blockDim.x * blockIdx.x + threadIdx.x;
 
 	const int totalThreads = gridDim.x * blockDim.x;     // total number of threads
@@ -62,6 +64,12 @@ void histogram(const unsigned int * const vec, unsigned int * const output, cons
 	}
 }
 
+void histogram(const unsigned int *d_vec, unsigned int *d_output, int shift, int vecSize){
+	const int nThreads = 1024;
+	const int nBlocks = vecSize / nThreads + 1;
+
+	d_histogram<<<nBlocks, nThreads>>>(d_vec, d_output, shift, vecSize);
+}
 
 
 
@@ -89,17 +97,14 @@ void blelloch_downsweep(unsigned int *d_vec, int vecSize, int step){
 	d_vec[myElement - leftDist] = aux;
 }
 
-unsigned int *xscan(const unsigned int *vec, int vecSize){
+// d_vec and vecSize must be powers of 2
+void xscan(unsigned int *d_vec, int vecSize){
 	int size = 1;
 	int nSteps = 0;
 	while(size < vecSize){
 		size <<= 1; // Lowest power of 2 greater than vecSize
 		nSteps++;   // The power itself
 	}
-
-	unsigned int *d_vec;
-	cudaMalloc(&d_vec, sizeof(int) * size);
-	cudaMemcpy(d_vec, vec, sizeof(int) * vecSize, cudaMemcpyHostToDevice);
 
 	// First reduce
 	for(int step = 1; step <= nSteps; step++){
@@ -125,13 +130,6 @@ unsigned int *xscan(const unsigned int *vec, int vecSize){
 
 		blelloch_downsweep<<<nBlocks, thrPerBlock>>>(d_vec, size, step);
 	}
-
-	unsigned int *result = (unsigned int *) malloc(sizeof(int) * vecSize);
-	cudaMemcpy(result, d_vec, sizeof(int) * vecSize, cudaMemcpyDeviceToHost);
-
-	cudaFree(d_vec);
-
-	return result;
 }
 
 
@@ -141,54 +139,116 @@ unsigned int *xscan(const unsigned int *vec, int vecSize){
 // 1D block and thread organization
 // There is no need for more than vecSize threads allocated.
 __global__
-void d_make_predicate(unsigned int * const d_vec, int vecSize, int shift){
+void d_make_predicate(unsigned int * const d_vec, int vecSize, int shift, int mask){
 	const int myIdx = blockDim.x * blockIdx.x + threadIdx.x;
 	const int threadCount = gridDim.x * blockDim.x;
 
 	int i;
 	for(i = myIdx; i < vecSize; i += threadCount)
-		d_vec[i] = (d_vec[i] >> shift) & 0xF;
+		d_vec[i] = ((d_vec[i] >> shift) & 0xF) == mask;
 }
 
 /* This function takes in a device vector 'd_vec'
  * And places in the device vector 'd_predicates' the predicates of each element of 'd_vec'
  *
- * The predicate for an element E is [ (E >> shift) & 0xF ]
+ * The predicate for an element E is [ ((E >> shift) & 0xF) == mask ]
  */
-void make_predicate(const unsigned int *d_vec, int vecSize, int shift, unsigned int *d_predicates){
+void make_predicate(const unsigned int *d_vec, int vecSize, int shift, int mask, unsigned int *d_predicates){
 	int nThreads = 1024; // Maximize number of threads
 	int nBlocks = vecSize / 1024 + 1;
 
 	cudaMemcpy(d_predicates, d_vec, vecSize * sizeof(int), cudaMemcpyDeviceToDevice);
 
-	d_make_predicate<<<nThreads, nBlocks>>>(d_predicates, vecSize, shift);
+	d_make_predicate<<<nThreads, nBlocks>>>(d_predicates, vecSize, shift, mask);
 }
 
-void unrelated_stuff(){
-	using namespace thrust;
 
-	host_vector<unsigned int> h_vec(4);
-	h_vec[0] = 512;
-	h_vec[1] = 64;
-	h_vec[2] = 32;
-	h_vec[3] = 2;
 
-	device_vector<unsigned int> d_vec = h_vec;
-	device_vector<unsigned int> d_pred(4);
+__global__
+void d_scatter_values(const unsigned int *d_input, const unsigned int *d_pred, const unsigned int *d_predScan, const unsigned int *d_histScan, unsigned int *d_output, int mask, int inputSize){
+	const int myIdx = blockDim.x * blockIdx.x + threadIdx.x;
+	const int threadCount = gridDim.x * blockDim.x;
 
-	make_predicate(raw_pointer_cast(d_vec.data()), 4, 4, raw_pointer_cast(d_pred.data()));
+	int i;
+	for(i = myIdx; i < inputSize; i += threadCount){
+		if(d_pred[i] == 1)
+			d_output[ d_histScan[mask] + d_predScan[i] ] = d_input[i];
+	}
+}
 
-	h_vec = d_pred;
-	for(int i = 0; i < 4; i++)
-		cout << h_vec[i] << " ";
+void scatter_values(const unsigned int *d_input, const unsigned int *d_pred, const unsigned int *d_predScan, const unsigned int *d_histScan, unsigned int *d_output, int mask, int inputSize){
+	const int nThreads = 1024;
+	const int nBlocks = inputSize / nThreads + 1;
+
+	d_scatter_values<<<nBlocks, nThreads>>>(d_input, d_pred, d_predScan, d_histScan, d_output, mask, inputSize);
+}
+
+
+void print_device(const unsigned int *d_vec){
+	unsigned int *vec;
+	vec = (unsigned int *) malloc(sizeof(int) * 32);
+	cudaMemcpy(vec, d_vec, sizeof(int) * 32, cudaMemcpyDeviceToHost);
+	for(int i =0; i < 32; i++)
+		cout << vec[i] << " ";
 	cout << "\n";
+	free(vec);
 }
 
-void your_sort(unsigned int* const d_inputVals,
-               unsigned int* const d_inputPos,
-               unsigned int* const d_outputVals,
-               unsigned int* const d_outputPos,
-               const size_t numElems)
+void your_sort(unsigned int* d_inputVals,
+               unsigned int* d_inputPos,
+               unsigned int* d_outputVals,
+               unsigned int* d_outputPos,
+               size_t numElems)
 {
-	unrelated_stuff();
+	using thrust::device_vector;
+	using thrust::host_vector;
+	using thrust::raw_pointer_cast;
+
+	unsigned int numElems_pow2 = 1;
+	while(numElems_pow2 < numElems)
+		numElems_pow2 <<= 1;
+
+	const int nShifts = (sizeof(int) * 8); // Number of bits in an integer
+	int swapCount = 0; // Number of swaps between input vec and output vec
+	device_vector<unsigned int> d_histogram(32);
+	device_vector<unsigned int> d_predicates(numElems_pow2);
+	device_vector<unsigned int> d_predScan;
+
+	for(int shift = 0; shift < nShifts; shift += 4){
+		// Get histogram
+		histogram(d_inputVals, raw_pointer_cast(d_histogram.data()), shift, numElems);
+
+		// Scan histogram in-place
+		xscan(raw_pointer_cast(d_histogram.data()), 32);
+
+		for(int mask = 0; mask < 32; mask++){
+			// Get predicates
+			make_predicate(d_inputVals, numElems, shift, mask, RPC(d_predicates.data()));
+
+			// Scan predicates in another vector
+			d_predScan = d_predicates;
+			xscan(raw_pointer_cast(d_predScan.data()), numElems_pow2);
+
+			// Scatter values into output
+			scatter_values( d_inputVals,
+			                RPC(d_predicates.data()),
+			                RPC(d_predScan.data()),
+			                RPC(d_histogram.data()),
+			                d_outputVals, mask, numElems);
+
+			scatter_values( d_inputPos,
+			                RPC(d_predicates.data()),
+			                RPC(d_predScan.data()),
+			                RPC(d_histogram.data()),
+			                d_outputPos, mask, numElems);
+		}
+
+		// Switch input vector with outputvector
+		std::swap(d_inputVals, d_outputVals);
+		std::swap(d_inputPos, d_outputPos);
+		swapCount++;
+	}
+
+	std::swap(d_inputVals, d_outputVals);
+	std::swap(d_inputPos, d_outputPos);
 }
