@@ -136,41 +136,52 @@ unsigned int *xscan(const unsigned int *vec, int vecSize){
 
 
 
-/* This function takes in a vector 'vec'
- * And places in the device vector 'd_predicates' the predicates of each element of 'vec'
+
+// In-Place predicate taker
+// 1D block and thread organization
+// There is no need for more than vecSize threads allocated.
+__global__
+void d_make_predicate(unsigned int * const d_vec, int vecSize, int shift){
+	const int myIdx = blockDim.x * blockIdx.x + threadIdx.x;
+	const int threadCount = gridDim.x * blockDim.x;
+
+	int i;
+	for(i = myIdx; i < vecSize; i += threadCount)
+		d_vec[i] = (d_vec[i] >> shift) & 0xF;
+}
+
+/* This function takes in a device vector 'd_vec'
+ * And places in the device vector 'd_predicates' the predicates of each element of 'd_vec'
  *
  * The predicate for an element E is [ (E >> shift) & 0xF ]
  */
-void make_predicate(const unsigned int *vec, int vecSize, int shift, const unsigned int *d_predicates){
+void make_predicate(const unsigned int *d_vec, int vecSize, int shift, unsigned int *d_predicates){
+	int nThreads = 1024; // Maximize number of threads
+	int nBlocks = vecSize / 1024 + 1;
 
+	cudaMemcpy(d_predicates, d_vec, vecSize * sizeof(int), cudaMemcpyDeviceToDevice);
+
+	d_make_predicate<<<nThreads, nBlocks>>>(d_predicates, vecSize, shift);
 }
 
-
 void unrelated_stuff(){
-	thrust::host_vector<unsigned int> h_vec(16);
+	using namespace thrust;
 
-	for(int i = 0; i < 16; i++)
-		h_vec[i] = 5;
-	thrust::device_vector<unsigned int> d_vec = h_vec;
+	host_vector<unsigned int> h_vec(4);
+	h_vec[0] = 512;
+	h_vec[1] = 64;
+	h_vec[2] = 32;
+	h_vec[3] = 2;
 
-	thrust::device_vector<unsigned int> d_hist(16);
-	histogram<<<1, 16>>>(thrust::raw_pointer_cast(d_vec.data()),
-	                thrust::raw_pointer_cast(d_hist.data()),
-	                0, 16);
+	device_vector<unsigned int> d_vec = h_vec;
+	device_vector<unsigned int> d_pred(4);
 
-	thrust::host_vector<unsigned int> h_hist = d_hist;
-	for(int i = 0; i < 16; i++)
-		cout << h_hist[i] << " ";
+	make_predicate(raw_pointer_cast(d_vec.data()), 4, 4, raw_pointer_cast(d_pred.data()));
+
+	h_vec = d_pred;
+	for(int i = 0; i < 4; i++)
+		cout << h_vec[i] << " ";
 	cout << "\n";
-
-	// h_vec is a bunch of 5's
-	unsigned int *scanned = xscan(thrust::raw_pointer_cast(h_vec.data()), 8);
-
-	for(unsigned int i = 0; i < 8; i++)
-		cout << scanned[i] << " ";
-	cout << "\n";
-
-	free(scanned);
 }
 
 void your_sort(unsigned int* const d_inputVals,
