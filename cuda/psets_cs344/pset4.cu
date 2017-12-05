@@ -177,8 +177,14 @@ void d_scatter_values(const unsigned int *d_input, const unsigned int *d_pred, c
 }
 
 void scatter_values(const unsigned int *d_input, const unsigned int *d_pred, const unsigned int *d_predScan, const unsigned int *d_histScan, unsigned int *d_output, int mask, int inputSize){
-	const int nThreads = 1024;
-	const int nBlocks = inputSize / nThreads + 1;
+	int nBlocks = 32; // 32 seems like a fair average number of blocks. In ideal conditions,
+	                        //we should query the device itself for the number of SMs.
+	int nThreads = inputSize / nBlocks + 1;
+
+	if(nThreads > 1024){ // If threads exceed maximum possible value
+		nThreads = 1024; // Maximize number of threads
+		nBlocks = inputSize / nThreads + 1;
+	}
 
 	d_scatter_values<<<nBlocks, nThreads>>>(d_input, d_pred, d_predScan, d_histScan, d_output, mask, inputSize);
 }
@@ -194,12 +200,16 @@ void print_device(const unsigned int *d_vec){
 	free(vec);
 }
 
+
+// First version: ~410 ms
 void your_sort(unsigned int* d_inputVals,
                unsigned int* d_inputPos,
                unsigned int* d_outputVals,
                unsigned int* d_outputPos,
                size_t numElems)
 {
+	cout << "There are " << numElems << " Elements\n";
+
 	using thrust::device_vector;
 	using thrust::host_vector;
 	using thrust::raw_pointer_cast;
@@ -251,4 +261,6 @@ void your_sort(unsigned int* d_inputVals,
 
 	std::swap(d_inputVals, d_outputVals);
 	std::swap(d_inputPos, d_outputPos);
+
+	checkCudaErrors(cudaDeviceSynchronize());
 }
