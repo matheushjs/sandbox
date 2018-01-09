@@ -5,7 +5,7 @@
 
 // Reference
 __global__ void smooth(float * v_new, const float * v) {
-    int myIdx = threadIdx.x * gridDim.x + blockIdx.x;
+    int myIdx = blockIdx.x * blockDim.x + threadIdx.x;
     int numThreads = blockDim.x * gridDim.x;
     int myLeftIdx = (myIdx == 0) ? 0 : myIdx - 1;
     int myRightIdx = (myIdx == (numThreads - 1)) ? numThreads - 1 : myIdx + 1;
@@ -18,17 +18,17 @@ __global__ void smooth(float * v_new, const float * v) {
 // Your code
 __global__ void smooth_shared(float * v_new, const float * v) {
     extern __shared__ float s[];
-    int myIdx = threadIdx.x * gridDim.x + blockIdx.x;
+    int myIdx = blockIdx.x * blockDim.x + threadIdx.x;
     int numThreads = blockDim.x * gridDim.x;
 
-    int myLeftIdx = (myIdx == 0) ? 0 : threadIdx.x - 1;
-    int myRightIdx = (myIdx == (numThreads - 1)) ? numThreads - 1 : threadIdx.x + 1;
+    int myLeftIdx = (myIdx == 0) ? 0 : myIdx - 1;
+    int myRightIdx = (myIdx == (numThreads - 1)) ? numThreads - 1 : myIdx + 1;
 
 	s[threadIdx.x+1] = v[myIdx];
 	if(threadIdx.x == 0)
 		s[0] = v[myLeftIdx];
-	else if(threadIdx.x == blockDim.x)
-		s[blockDim.x + 2] = v[myRightIdx];
+	else if(threadIdx.x == blockDim.x-1)
+		s[threadIdx.x + 2] = v[myRightIdx];
 	__syncthreads();
 
     v_new[myIdx] = 0.25f * s[threadIdx.x] + 0.5f * s[threadIdx.x+1] + 0.25f * s[threadIdx.x+2];
@@ -37,7 +37,7 @@ __global__ void smooth_shared(float * v_new, const float * v) {
 void compare(float *h_in, float *h_out, float *h_out_shared, float *h_cmp, int size){
 	char good = 1;
 	
-	printf("\nCmp:\n");
+/*	printf("\nCmp:\n");
 	for(int i = 0; i < size; i++) printf("%.3lf %s", h_cmp[i], (i+1)%32 == 0 ? "\n" : "");
 	printf("\n");
 
@@ -48,7 +48,14 @@ void compare(float *h_in, float *h_out, float *h_out_shared, float *h_cmp, int s
 	printf("\nYours:\n");
 	for(int i = 0; i < size; i++) printf("%.3lf %s", h_out_shared[i], (i+1)%32 == 0 ? "\n" : "");
 	printf("\n");
+*/
 
+
+	for(int i = 0; i < size; i++){
+		if(h_out[i] != h_cmp[i]) good = 0;
+	}
+	if(!good) printf("Theirs is Wrong!\n");
+	else printf("Theirs is Right!\n");
 
 	for(int i = 0; i < size; i++){
 		if(h_out_shared[i] != h_cmp[i]) good = 0;
@@ -90,20 +97,17 @@ int main(int argc, char **argv)
     // transfer the input array to the GPU
     cudaMemcpy(d_in, h_in, ARRAY_BYTES, cudaMemcpyHostToDevice); 
 
-    // cudaEvent_t start, stop;
-    // cudaEventCreate(&start);
-    // cudaEventCreate(&stop);
     // launch the kernel
-    smooth<<<ARRAY_SIZE / BLOCK_SIZE, BLOCK_SIZE>>>(d_out, d_in);
     GpuTimer timer;
-    timer.Start();
+	timer.Start();
+    smooth<<<ARRAY_SIZE / BLOCK_SIZE, BLOCK_SIZE>>>(d_out, d_in);
+	timer.Stop();
+    printf("Their code executed in %g ms\n", timer.Elapsed());
+    
+	timer.Start();
     smooth_shared<<<ARRAY_SIZE / BLOCK_SIZE, BLOCK_SIZE, (BLOCK_SIZE + 2) * sizeof(float)>>>(d_out_shared, d_in);
     timer.Stop();
-
     printf("Your code executed in %g ms\n", timer.Elapsed());
-    // cudaEventSynchronize(stop);
-    // float elapsedTime;
-    // cudaEventElapsedTime(&elapsedTime, start, stop);    
 
     // copy back the result from GPU
     cudaMemcpy(h_out, d_out, ARRAY_BYTES, cudaMemcpyDeviceToHost);
