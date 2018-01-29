@@ -1,25 +1,3 @@
-#!/usr/bin/python3
+#!/bin/bash
 
-import sys
-
-def avg(nums):
-    acc = 0.0
-    for i in nums:
-        acc += float(i)
-
-    if nums:
-        return acc / len(nums)
-    else:
-        return 0.0
-
-# Check if there is pipe input
-if not sys.stdin.isatty():
-    hasPipe = True
-else:
-    hasPipe = False
-
-if hasPipe:
-    inp = sys.stdin.read().split()
-    print(avg(inp))
-else: # Has arguments instead
-    print(avg(sys.argv[1:]))
+elf_stats $@ | grep Mean | cut -f 2 -d' '
