@@ -1,0 +1,31 @@
+#!/usr/bin/python3
+
+import sys
+from statistics import *
+
+# Check if there is pipe input
+if not sys.stdin.isatty():
+    hasPipe = True
+else:
+    hasPipe = False
+
+if hasPipe:
+    inp = sys.stdin.read().split()
+else: # Has arguments instead
+    inp = sys.argv[1:]
+
+inp = [ float(i) for i in inp ]
+
+numerics = [
+        ("Max",          max(inp)),
+        ("Min",          min(inp)),
+        ("Median",       median(inp)),
+        ("Mean",         mean(inp)),
+        ("PStdDev",      pstdev(inp)),
+        ("PVariance",    pvariance(inp)),
+        ("StdDev",       stdev(inp)),
+        ("Variance",     variance(inp)),
+    ]
+
+for i, j in numerics:
+    print(i + ": " + str(j))
