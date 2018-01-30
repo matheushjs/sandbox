@@ -19,12 +19,14 @@ inp = [ float(i) for i in inp ]
 numerics = [
         ("Max",          max(inp)),
         ("Min",          min(inp)),
+        ("Sum",          sum(inp)),
         ("Median",       median(inp)),
         ("Mean",         mean(inp)),
         ("PStdDev",      pstdev(inp)),
         ("PVariance",    pvariance(inp)),
         ("StdDev",       stdev(inp)),
         ("Variance",     variance(inp)),
+        ("Sorted",       ' '.join([str(i) for i in sorted(inp)])),
     ]
 
 for i, j in numerics:
