@@ -2,16 +2,19 @@
 #include <linux/kernel.h>
 #include <linux/init.h>
 
-static int mydata __initdata = 3;
-
-static int __init myinit(void){
-	printk(KERN_INFO "Hello, world %d\n", mydata);
+static int __init my_init(void){
+	printk(KERN_INFO "Hello, world\n");
 	return 0;
 }
 
-static void __exit myexit(void){
+static void __exit my_exit(void){
 	printk(KERN_INFO "Goodbye, world\n");
 }
 
-module_init(myinit);
-module_exit(myexit);
+module_init(my_init);
+module_exit(my_exit);
+
+MODULE_LICENSE("GPL");
+MODULE_AUTHOR("Matheus H. J. Saldanha <m@gmail.com>");
+MODULE_DESCRIPTION("A simple device");
+MODULE_SUPPORTED_DEVICE("something");
