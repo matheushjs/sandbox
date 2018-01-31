@@ -2,8 +2,10 @@
 #include <linux/kernel.h>
 #include <linux/init.h>
 
+static int mydata __initdata = 3;
+
 static int __init myinit(void){
-	printk(KERN_INFO "Hello, world\n");
+	printk(KERN_INFO "Hello, world %d\n", mydata);
 	return 0;
 }
 
