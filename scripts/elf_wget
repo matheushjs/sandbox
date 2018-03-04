@@ -1,0 +1,48 @@
+#!/bin/bash
+
+# Given a file containing a sequence of (name, url), we download the content in $url
+#  using wget and rename the downloaded file to $name.
+# The downloads are sequentially made, and the user is responsible for placing the
+#  extension into $name
+# For downloading files without renaming, wget itself has an option for this.
+#
+# $1: input file for reading sequence of (name, url)
+#
+# File format:
+#
+#name1
+#url1
+#name2
+#url2
+#...
+
+if [ "$1" == "" ]; then
+	echo "Usage: ./elf_wget input_file"
+	exit
+fi
+
+name=""
+url=""
+
+cat $1 | while read i; do
+	if [ "$i" == "" ]; then
+		continue;
+	fi
+
+	if [ "$name" == "" ]; then
+		name="$i";
+		continue;
+	fi
+
+	url="$i"
+
+	# Download
+	wget "$url" -O "${name}$2"
+
+	# Rename downloaded file
+	# last=$(ls -ut | head -1)
+	# mv "$last" "${name}.mp4"
+	
+	name=""
+	url=""
+done
