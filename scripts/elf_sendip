@@ -1,0 +1,27 @@
+#!/bin/bash
+
+myip="localhost"
+
+while [ 1 ]; do
+	while [ 1 ]; do
+		# Get current ip
+		trial="`bash ~/ComputerS/bash/system_help/dns_lookup.bash`"
+		
+		# Debug
+		echo "Last IP sent: " "$myip"
+		echo "Current IP: " "$trial"
+
+		# Compare with last sent ip
+		if [ "$myip" != "$trial" ]; then
+			echo "Difference Detected"
+			myip="$trial"
+			break # Break out of the while loop
+		fi
+
+		# If its equal, sleep
+		sleep 360;
+	done
+
+	curl -d ip="`bash ~/ComputerS/bash/system_help/dns_lookup.bash`" mjsaldanha.com/myip;
+	echo
+done
