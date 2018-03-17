@@ -17,7 +17,7 @@
 #...
 
 if [ "$1" == "" ]; then
-	echo "Usage: ./elf_wget input_file"
+	echo "Usage: ./elf_wget input_file [append_to_filename]"
 	exit
 fi
 
