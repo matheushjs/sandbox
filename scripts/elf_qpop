@@ -1,8 +1,7 @@
 #!/bin/bash
 
 # elf_qpop
-#
-#
+# Pops the next element in the queue, created with elf_qpush.
 
 FILENAME="queue.elf"
 
