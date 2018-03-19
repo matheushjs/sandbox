@@ -1,0 +1,29 @@
+#!/bin/bash
+
+# elf_qpop
+#
+#
+
+FILENAME="elf.queue"
+
+if [ -e $FILENAME ]; then
+	# Get number of lines on file
+	lines="$(cat $FILENAME | wc -l)"
+
+	if [ $lines -eq 0 ]; then
+		echo "Queue is empty"
+		exit
+	fi
+
+	popped=`head -1 $FILENAME`
+	content=$(tail -$(expr $lines - 1) $FILENAME)
+
+	echo $popped
+
+	rm $FILENAME
+	for i in $content; do
+		echo $i >> $FILENAME
+	done
+else
+	echo "File does not exist"
+fi
