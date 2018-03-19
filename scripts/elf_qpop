@@ -4,7 +4,7 @@
 #
 #
 
-FILENAME="elf.queue"
+FILENAME="queue.elf"
 
 if [ -e $FILENAME ]; then
 	# Get number of lines on file

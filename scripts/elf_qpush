@@ -10,8 +10,7 @@
 #   in the queue, in the order of receival of such strings.
 #
 
-# Should add all given lines into a queue file, with a standard name elf.queue for example
-FILENAME="elf.queue"
+FILENAME="queue.elf"
 
 rm -vf $FILENAME
 
