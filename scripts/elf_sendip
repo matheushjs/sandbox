@@ -47,6 +47,7 @@ while [ 1 ]; do
 			if [ $? -eq "0" ]; then
 				echo "Port 22 is OK."
 			else
+				notify-send "PORT 22 needs fixing."
 				while true; do
 					echo "==== PORT 22 IS NOT AVAILABLE. FIX IT. ===="
 					sleep 1
