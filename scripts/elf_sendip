@@ -2,24 +2,59 @@
 
 myip="localhost"
 
+function test_ssh {
+	echo " "
+	echo "Checking PORT 22 availability on $1"
+	
+	# Run in background
+	{ echo " " | telnet $1 22 &> /dev/null; } &
+	
+	# Sleep 2 seconds
+	sleep 2
+
+	# Try to kill
+	pid="$!"
+	kill -9 $pid &> /dev/null
+	retval="$?"
+	
+	echo "Result: " $retval
+
+	if [ $retval -eq "1" ]; then
+		# If failed, then ssh is working
+		return 0
+	else
+		return 1
+	fi
+}
+
+
 while [ 1 ]; do
 	while [ 1 ]; do
 		# Get current ip
 		trial="`bash ~/ComputerS/bash/system_help/dns_lookup.bash`"
-		
-		# Debug
-		echo "Last IP sent: " "$myip"
-		echo "Current IP: " "$trial"
 
 		# Compare with last sent ip
 		if [ "$myip" != "$trial" ]; then
-			echo "Difference Detected"
 			myip="$trial"
+			echo "Difference Detected. New IP = $myip"
 			break # Break out of the while loop
 		fi
 
 		# If its equal, sleep
-		sleep 360;
+		for i in $( seq 6 ); do
+			test_ssh $myip
+
+			if [ $? -eq "0" ]; then
+				echo "Port 22 is OK."
+			else
+				while true; do
+					echo "==== PORT 22 IS NOT AVAILABLE. FIX IT. ===="
+					sleep 1
+				done
+			fi
+
+			sleep 58
+		done
 	done
 
 	curl -d ip="`bash ~/ComputerS/bash/system_help/dns_lookup.bash`" mjsaldanha.com/myip;
