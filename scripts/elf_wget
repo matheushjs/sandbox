@@ -18,6 +18,15 @@
 
 if [ "$1" == "" ]; then
 	echo "Usage: ./elf_wget input_file [append_to_filename]"
+	echo "================================================="
+	echo ""
+	echo "File format:"
+	echo "============"
+	echo "name1"
+	echo "url1"
+	echo "name2"
+	echo "url2"
+	echo "[...]"
 	exit
 fi
 
