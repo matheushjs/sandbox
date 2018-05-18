@@ -1,0 +1,3 @@
+#!/bin/bash
+ssh mhjs@halley.lasdpc.icmc.usp.br -p 22200 \
+	ssh tpnode01 $@
