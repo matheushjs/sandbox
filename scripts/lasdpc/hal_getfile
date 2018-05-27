@@ -1,2 +1,2 @@
 #!/bin/bash
-scp -r -P 22200 mhjs@halley.lasdpc.icmc.usp.br:$1 $2
+scp -r -P 22200 mhjs@halley.lasdpc.icmc.usp.br:~/Remote_Halley ~/
