@@ -1,0 +1,2 @@
+#!/bin/bash
+ssh mathjs@euler.cemeai.icmc.usp.br $@
