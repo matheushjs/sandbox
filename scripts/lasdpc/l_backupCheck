@@ -3,13 +3,14 @@
 FILENAME="$HOME/.l_backupCheck.txt";
 
 function backup {
-	l_backupssh;
-
 	# Calculate date for executing next backup
 	deadline=$( date "+%C%y%m%d" -d "+2 days" );
 
 	# Overwrite control file
 	echo $deadline > $FILENAME;
+
+	# Backup
+	l_backupssh;
 
 	# Tell user new deadline.
 	echo;
