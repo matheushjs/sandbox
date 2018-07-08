@@ -1,0 +1,39 @@
+#!/bin/bash
+
+FILENAME="$HOME/.l_backupCheck.txt";
+
+function backup {
+	l_backupssh;
+
+	# Calculate date for executing next backup
+	deadline=$( date "+%C%y%m%d" -d "+2 days" );
+
+	# Overwrite control file
+	echo $deadline > $FILENAME;
+
+	# Tell user new deadline.
+	echo;
+	echo;
+	echo "Backup finished."
+	echo "New deadline set to:" $(date -d "+2 days")
+}
+
+# Check if file exists
+if ! [ -a $FILENAME ]; then
+	echo "'$FILENAME' does not exist. Backing up now.";
+	echo;
+	echo;
+	backup;
+	exit 0;
+fi;
+
+# Check deadline passed
+deadline=$( cat $FILENAME );
+today=$( date "+%C%y%m%d" );
+if [ $today -ge $deadline ]; then
+	echo "Backup deadline has been reached. Backing up now.";
+	echo;
+	echo;
+	backup;
+	exit 0;
+fi;
