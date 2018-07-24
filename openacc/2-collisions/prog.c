@@ -24,22 +24,20 @@ int3 *create_vector(int size){
 
 int count(int3 *vec, int vecSize){
 	int i, j;
-	int colls;
+	int colls = 0;
 
 	#pragma acc data copyin(vec[vecSize]) copyout(colls)
-	{
-		colls = 0;
-		
-		#pragma acc parallel loop private(j) reduction( +:colls )
-		for(i = 0; i < (vecSize-1); i++){
-			for(j = i+1; j < vecSize; j++){
-				if(
-					vec[i].x == vec[j].x
-					&& vec[i].y == vec[j].y
-					&& vec[i].z == vec[j].z
-				){
-					colls++;
-				}
+	#pragma acc parallel loop reduction( +:colls )
+	for(i = 0; i < (vecSize-1); i++){
+
+		#pragma acc loop reduction( +:colls )
+		for(j = i+1; j < vecSize; j++){
+			if(
+				vec[i].x == vec[j].x
+				&& vec[i].y == vec[j].y
+				&& vec[i].z == vec[j].z
+			){
+				colls++;
 			}
 		}
 	}
