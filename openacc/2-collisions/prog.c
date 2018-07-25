@@ -26,8 +26,7 @@ int count(int3 *vec, int vecSize){
 	int i, j;
 	int colls = 0;
 
-	#pragma acc data copyin(vec[vecSize]) copy(colls)
-	#pragma acc parallel loop reduction( +:colls )
+	#pragma acc parallel loop reduction( +:colls ) copyin(vec[:vecSize])
 	for(i = 0; i < (vecSize-1); i++){
 
 		#pragma acc loop reduction( +:colls )
