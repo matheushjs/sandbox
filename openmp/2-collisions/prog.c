@@ -26,7 +26,7 @@ int count(int3 *vec, int vecSize){
 	int i;
 	int colls = 0;
 
-	#pragma omp parallel for default(none) reduction(+:colls) shared(vec, vecSize)
+	#pragma omp parallel for default(none) reduction(+:colls) shared(vec, vecSize) schedule(static,1)
 	for(i = 0; i < (vecSize-1); i++){
 		int j;
 		for(j = i+1; j < vecSize; j++){
