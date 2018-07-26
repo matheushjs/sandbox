@@ -23,11 +23,12 @@ int3 *create_vector(int size){
 }
 
 int count(int3 *vec, int vecSize){
-	int i, j;
+	int i;
 	int colls = 0;
 
-	#pragma omp parallel for reduction(+:colls)
+	#pragma omp parallel for default(none) reduction(+:colls) shared(vec, vecSize)
 	for(i = 0; i < (vecSize-1); i++){
+		int j;
 		for(j = i+1; j < vecSize; j++){
 			if(
 				vec[i].x == vec[j].x
