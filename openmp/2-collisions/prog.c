@@ -26,22 +26,17 @@ int count(int3 *vec, int vecSize){
 	int i, j;
 	int colls = 0;
 
-	#pragma omp parallel for
+	#pragma omp parallel for reduction(+:colls)
 	for(i = 0; i < (vecSize-1); i++){
-		int aux = 0;
-
 		for(j = i+1; j < vecSize; j++){
 			if(
 				vec[i].x == vec[j].x
 				&& vec[i].y == vec[j].y
 				&& vec[i].z == vec[j].z
 			){
-				aux++;
+				colls++;
 			}
 		}
-
-		#pragma omp critical
-		colls += aux;
 	}
 
 	return colls;
