@@ -1,3 +1,0 @@
-#!/bin/bash
-
-elf_stats $@ | grep Mean | cut -f 2 -d' '

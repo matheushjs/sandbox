@@ -1,2 +1,0 @@
-#!/bin/bash
-scp -r mathjs@euler.cemeai.icmc.usp.br:$1 ./

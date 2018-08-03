@@ -1,7 +1,0 @@
-#!/bin/bash
-myip=$(wget -O - mjsaldanha.com/myip)
-rsync -avz ~/ mathjs@$myip:~/Downloads/Lasdpc_Backup
-
-
-localip=10.0.0.100
-rsync -avz ~/ mhjs@$localip:~/Downloads/Lasdpc_Backup

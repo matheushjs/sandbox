@@ -1,2 +1,0 @@
-#!/bin/bash
-ssh -X mhjs@halley.lasdpc.icmc.usp.br -p 22200 $@
