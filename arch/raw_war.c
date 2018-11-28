@@ -20,7 +20,8 @@
  * Ou seja, cada elemento recebe a média dos 5 elementos que o circundam.
  */
 
-#define N 10000000
+#define CYCLES 100000
+#define N 1000
 
 int main(int argc, char *argv[]){
 	int i, j;
@@ -34,8 +35,10 @@ int main(int argc, char *argv[]){
 	}
 
 	// Realiza computação
-	for(j = 2; j < N-2; j++){
-		vector[j] = (vector[j-2] + vector[j-1] + vector[j] + vector[j+1] + vector[j+2]) / 5;
+	for(i = 0; i < CYCLES; i++){
+		for(j = 2; j < N-2; j++){
+			vector[j] = (vector[j-2] + vector[j-1] + vector[j] + vector[j+1] + vector[j+2]) / 5;
+		}
 	}
 
 	// Imprime alguns elementos
