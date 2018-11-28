@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 
 /* Utilizamos este código para analisar diferenças arquiteturais relativas
  *   a códigos com dependência de dados.
@@ -15,15 +16,17 @@
  *   vetor), sem se preocupar com a corretude ou a funcionalidade do algoritmo.
  *
  * Neste código, a operação de stencil realizada é a seguinte:
- *   vector[i] = (vector[i-2] + vector[i-1] + vector[i] + vector[i+1] + vector[i+2]) / 5
- * Ou seja, cada elemento recebe a média dos 5 elementos que o circundam.
+ *   vector[i] = (vector[i+1] + vector[i+2] + vector[i+3] + vector[i+4] + vector[i+5]) / 5
+ * Ou seja, cada elemento recebe a média dos 5 elementos que o seguem.
  */
 
-#define N 10000
+#define N 10000000
 
 int main(int argc, char *argv[]){
 	int i, j;
 	int *vector = malloc(sizeof(int) * N);
+
+	printf("Size allocated: %.3lfMB\n", (sizeof(int) * N) / (double) 1024 / (double) 1024);
 
 	// Inicializa vetor
 	for(i = 0; i < N; i++){
@@ -31,8 +34,8 @@ int main(int argc, char *argv[]){
 	}
 
 	// Realiza computação
-	for(j = 2; j < N-2; j++){
-		vector[j] = (vector[j-2] + vector[j-1] + vector[j] + vector[j+1] + vector[j+2]) / 5;
+	for(j = 0; j < N-5; j++){
+		vector[j] = (vector[j+1] + vector[j+2] + vector[j+3] + vector[j+4] + vector[j+5]) / 5;
 	}
 
 	// Imprime alguns elementos
