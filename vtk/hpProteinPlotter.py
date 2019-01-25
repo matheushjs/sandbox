@@ -42,10 +42,15 @@ def sphereActor(x, y, z, color="blue"):
 
     mapper = vtk.vtkPolyDataMapper()
     mapper.SetInputConnection(sphereSource.GetOutputPort())
+    mapper.SetScalarVisibility(False)
 
     actor = vtk.vtkActor()
     actor.SetMapper(mapper)
     actor.GetProperty().SetColor(colors.GetColor3d(color))
+    actor.GetProperty().SetAmbient(0.3)
+    actor.GetProperty().SetDiffuse(1)
+    actor.GetProperty().SetSpecular(0.6)
+    actor.GetProperty().SetSpecularPower(20)
 
     return actor
 
@@ -82,6 +87,53 @@ def main():
     renderWindowInteractor = vtk.vtkRenderWindowInteractor()
     renderWindowInteractor.SetRenderWindow(renderWindow)
     renderer.SetBackground(colors.GetColor3d("white"))
+
+    # Set crazy shadowing. I do not know what these things do.
+    opaque = vtk.vtkOpaquePass()
+    peeling = vtk.vtkDepthPeelingPass()
+    peeling.SetMaximumNumberOfPeels(200)
+    peeling.SetOcclusionRatio(0.1)
+    translucent = vtk.vtkTranslucentPass()
+    peeling.SetTranslucentPass(translucent)
+    volume = vtk.vtkVolumetricPass()
+    overlay = vtk.vtkOverlayPass()
+    lights = vtk.vtkLightsPass()
+    shadowsBaker = vtk.vtkShadowMapBakerPass()
+    shadowsBaker.SetResolution(1024)
+    shadows = vtk.vtkShadowMapPass()
+    shadows.SetShadowMapBakerPass(shadowsBaker)
+    passes = vtk.vtkRenderPassCollection()
+    passes.AddItem(shadowsBaker)
+    passes.AddItem(shadows)
+    passes.AddItem(lights)
+    passes.AddItem(peeling)
+    passes.AddItem(volume)
+    passes.AddItem(overlay)
+    seq = vtk.vtkSequencePass()
+    seq.SetPasses(passes)
+    cameraP = vtk.vtkCameraPass()
+    cameraP.SetDelegatePass(seq)
+    renderer.SetPass(cameraP)
+
+    # Add some lights
+    l1 = vtk.vtkLight()
+    l1.SetPosition(-10,0,0)
+    l1.SetFocalPoint(0,0,0)
+    l1.SetColor(1,1,1)
+    l1.SetIntensity(0.6)
+    renderer.AddLight(l1)
+    l2 = vtk.vtkLight()
+    l2.SetPosition(10,10,0)
+    l2.SetFocalPoint(0,0,0)
+    l2.SetColor(1,1,1)
+    l2.SetIntensity(0.6)
+    renderer.AddLight(l2)
+
+    # Add something to represent the light source, if you want.
+    p = l1.GetPosition()
+    renderer.AddActor(sphereActor(p[0], p[1], p[2], "gold"))
+    p = l2.GetPosition()
+    renderer.AddActor(sphereActor(p[0], p[1], p[2], "gold"))
 
     # Render first bead
     p = points[0]
