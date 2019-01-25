@@ -25,7 +25,7 @@ def getPoints(filename):
 
     for coord in coords:
         nums = coord.strip("()").split(",")
-        nums = [int(i) for i in nums]
+        nums = [4*int(i) for i in nums]
         points.append(Point(nums[0], nums[1], nums[2]))
 
     for p, h in zip(points, hp):
@@ -36,7 +36,7 @@ def getPoints(filename):
 def sphereActor(x, y, z, color="blue"):
     sphereSource = vtk.vtkSphereSource()
     sphereSource.SetCenter(x, y, z)
-    sphereSource.SetRadius(0.2)
+    sphereSource.SetRadius(0.8)
     sphereSource.SetPhiResolution(100)
     sphereSource.SetThetaResolution(100)
 
@@ -49,7 +49,7 @@ def sphereActor(x, y, z, color="blue"):
     actor.GetProperty().SetColor(colors.GetColor3d(color))
     actor.GetProperty().SetAmbient(0.3)
     actor.GetProperty().SetDiffuse(1)
-    actor.GetProperty().SetSpecular(0.6)
+    actor.GetProperty().SetSpecular(0.7)
     actor.GetProperty().SetSpecularPower(20)
 
     return actor
@@ -61,33 +61,24 @@ def lineActor(p1, p2):
 
     tubeSource = vtk.vtkTubeFilter()
     tubeSource.SetInputConnection(lineSource.GetOutputPort())
-    tubeSource.SetRadius(0.25/4)
+    tubeSource.SetRadius(1/3)
     tubeSource.SetNumberOfSides(100)
     tubeSource.Update()
 
     mapper = vtk.vtkPolyDataMapper()
     mapper.SetInputConnection(tubeSource.GetOutputPort())
+
     actor = vtk.vtkActor()
-    actor.GetProperty().SetColor(colors.GetColor3d("black"))
     actor.SetMapper(mapper)
+    actor.GetProperty().SetColor(colors.GetColor3d("darkslategray"))
+    actor.GetProperty().SetAmbient(0.3)
+    actor.GetProperty().SetDiffuse(1)
+    actor.GetProperty().SetSpecular(1)
+    actor.GetProperty().SetSpecularPower(30)
 
     return actor
 
-def main():
-    if len(sys.argv) == 1:
-        print("Usage: {} [input file]\n".format(sys.argv[0]))
-        return 1
-    else:
-        points = getPoints(sys.argv[1])
-
-    renderer = vtk.vtkRenderer()
-    renderWindow = vtk.vtkRenderWindow()
-    renderWindow.SetWindowName("Sphere")
-    renderWindow.AddRenderer(renderer)
-    renderWindowInteractor = vtk.vtkRenderWindowInteractor()
-    renderWindowInteractor.SetRenderWindow(renderWindow)
-    renderer.SetBackground(colors.GetColor3d("white"))
-
+def makeCameraPass():
     # Set crazy shadowing. I do not know what these things do.
     opaque = vtk.vtkOpaquePass()
     peeling = vtk.vtkDepthPeelingPass()
@@ -113,20 +104,37 @@ def main():
     seq.SetPasses(passes)
     cameraP = vtk.vtkCameraPass()
     cameraP.SetDelegatePass(seq)
-    renderer.SetPass(cameraP)
+
+    return cameraP
+
+def main():
+    if len(sys.argv) == 1:
+        print("Usage: {} [input file]\n".format(sys.argv[0]))
+        return 1
+    else:
+        points = getPoints(sys.argv[1])
+
+    renderer = vtk.vtkRenderer()
+    renderWindow = vtk.vtkRenderWindow()
+    renderWindow.SetWindowName("Sphere")
+    renderWindow.AddRenderer(renderer)
+    renderWindowInteractor = vtk.vtkRenderWindowInteractor()
+    renderWindowInteractor.SetRenderWindow(renderWindow)
+    renderer.SetBackground(colors.GetColor3d("white"))
+    renderer.SetPass(makeCameraPass())
 
     # Add some lights
     l1 = vtk.vtkLight()
-    l1.SetPosition(-10,0,0)
+    l1.SetPosition(-40,0,0)
     l1.SetFocalPoint(0,0,0)
     l1.SetColor(1,1,1)
-    l1.SetIntensity(0.6)
+    l1.SetIntensity(0.5)
     renderer.AddLight(l1)
     l2 = vtk.vtkLight()
-    l2.SetPosition(10,10,0)
+    l2.SetPosition(40,40,0)
     l2.SetFocalPoint(0,0,0)
     l2.SetColor(1,1,1)
-    l2.SetIntensity(0.6)
+    l2.SetIntensity(0.5)
     renderer.AddLight(l2)
 
     # Add something to represent the light source, if you want.
