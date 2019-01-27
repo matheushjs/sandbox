@@ -107,6 +107,33 @@ def makeCameraPass():
 
     return cameraP
 
+def addLights(renderer, points):
+    # Get some edge coordinates
+    minX = min([p.x for p in points])
+    maxX = max([p.x for p in points])
+    maxY = max([p.y for p in points])
+
+    # Add some lights
+    l1 = vtk.vtkLight()
+    l1.SetPosition(minX-10,0,0)
+    l1.SetFocalPoint(0,0,0)
+    l1.SetColor(1,1,1)
+    l1.SetIntensity(0.5)
+    renderer.AddLight(l1)
+    l2 = vtk.vtkLight()
+    l2.SetPosition(maxX+10,maxY+10,0)
+    l2.SetFocalPoint(0,0,0)
+    l2.SetColor(1,1,1)
+    l2.SetIntensity(0.5)
+    renderer.AddLight(l2)
+
+    # Add something to represent the light source, if you want.
+    p = l1.GetPosition()
+    renderer.AddActor(sphereActor(p[0], p[1], p[2], "gold"))
+    p = l2.GetPosition()
+    renderer.AddActor(sphereActor(p[0], p[1], p[2], "gold"))
+
+
 def main():
     if len(sys.argv) == 1:
         print("Usage: {} [input file]\n".format(sys.argv[0]))
@@ -124,25 +151,7 @@ def main():
     renderer.SetBackground(colors.GetColor3d("Gainsboro"))
     renderer.SetPass(makeCameraPass())
 
-    # Add some lights
-    l1 = vtk.vtkLight()
-    l1.SetPosition(-40,0,0)
-    l1.SetFocalPoint(0,0,0)
-    l1.SetColor(1,1,1)
-    l1.SetIntensity(0.5)
-    renderer.AddLight(l1)
-    l2 = vtk.vtkLight()
-    l2.SetPosition(40,40,0)
-    l2.SetFocalPoint(0,0,0)
-    l2.SetColor(1,1,1)
-    l2.SetIntensity(0.5)
-    renderer.AddLight(l2)
-
-    # Add something to represent the light source, if you want.
-    p = l1.GetPosition()
-    renderer.AddActor(sphereActor(p[0], p[1], p[2], "gold"))
-    p = l2.GetPosition()
-    renderer.AddActor(sphereActor(p[0], p[1], p[2], "gold"))
+    addLights(renderer, points)
 
     # Render first bead
     p = points[0]
