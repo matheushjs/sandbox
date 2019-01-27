@@ -117,10 +117,11 @@ def main():
     renderer = vtk.vtkRenderer()
     renderWindow = vtk.vtkRenderWindow()
     renderWindow.SetWindowName("Sphere")
+    renderWindow.SetSize(1000, 800)
     renderWindow.AddRenderer(renderer)
     renderWindowInteractor = vtk.vtkRenderWindowInteractor()
     renderWindowInteractor.SetRenderWindow(renderWindow)
-    renderer.SetBackground(colors.GetColor3d("white"))
+    renderer.SetBackground(colors.GetColor3d("Gainsboro"))
     renderer.SetPass(makeCameraPass())
 
     # Add some lights
@@ -149,7 +150,7 @@ def main():
 
     # Render beads
     for p in points[1:]:
-        renderer.AddActor(sphereActor(p.x, p.y, p.z, "blue" if p.t is "P" else "red"))
+        renderer.AddActor(sphereActor(p.x, p.y, p.z, "SteelBlue" if p.t is "P" else "Crimson"))
 
     # Render bonds
     for i in range(1, len(points)):
