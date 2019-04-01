@@ -1,0 +1,46 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <title>Demo</title>
+    <style>
+      .cyan {
+        background: cyan;
+      }
+
+      .green {
+        background: greenyellow;
+      }
+    </style>
+</head>
+<body style="width: 100%; text-align: center">
+    <a href="#">jQuery</a>
+    
+    <p id="par1">par1</p>
+    <p id="par2">par2</p>
+
+    <div id="testDiv" style="width: 100%; margin: 20px 0; padding: 20px 0;">
+      Colored Box
+    </div>
+
+    <script>
+      $("a").click(function(event){
+        var elem = $("#testDiv");
+        if(elem.hasClass("cyan")){
+          elem.removeClass("cyan");
+          elem.addClass("green");
+        } else {
+          elem.removeClass("green");
+          elem.addClass("cyan");
+        }
+
+        $("#par1").insertAfter($("#par2"));
+
+        $("p").first().before($("<p>A new paragraph</p>"));
+
+        event.preventDefault();
+      });
+    </script>
+</body>
+</html>
