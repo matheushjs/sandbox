@@ -1,0 +1,22 @@
+{
+  "name": "node",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "start": "node ./build/app.js",
+    "build": "babel src --out-dir=build/",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Matheus H J Saldanha",
+  "license": "MIT",
+  "devDependencies": {
+    "@babel/cli": "^7.4.3",
+    "@babel/core": "^7.4.3",
+    "@babel/preset-env": "^7.4.3"
+  },
+  "dependencies": {
+    "@babel/polyfill": "^7.4.3",
+    "core-js": "^3.0.1"
+  }
+}
