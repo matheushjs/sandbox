@@ -1,0 +1,16 @@
+{
+  "name": "node",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "start": "node ./build/app.js",
+    "build": "babel src --out-dir=build/",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Matheus H J Saldanha",
+  "license": "MIT",
+  "devDependencies": {
+    "eslint": "^5.16.0"
+  }
+}
