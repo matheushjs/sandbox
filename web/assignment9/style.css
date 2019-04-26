@@ -19,6 +19,18 @@ form input, form select {
   width: 100%;
 }
 
+table {
+  margin: auto;
+}
+
+table td, table th {
+  min-width: 200px;
+}
+
+table th {
+  border-bottom: 1px solid black;
+}
+
 .header {
   height: 30vh;
   padding-top: 10vh;
@@ -51,4 +63,8 @@ form input, form select {
   padding: 0 10px;
   text-align: right;
   line-height: 1.5;
+}
+
+#content {
+  margin: 30px auto;
 }
