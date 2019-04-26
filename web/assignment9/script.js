@@ -16,15 +16,15 @@ function processInput(event){
   };
 
   var now = new Date(Date.now());
-  var dateBegin = new Date(2019, now.getMonth(), now.getDate()); // Data inicial
-  sendData.dataInicial = dateBegin.getMonth() + "-" + dateBegin.getDate() + "-" + dateBegin.getFullYear();
+  var dateEnd = new Date(2019, now.getMonth(), now.getDate()); // Data final
+  sendData.dataFinalCotacao = "\'" + dateEnd.getMonth() + "-" + dateEnd.getDate() + "-" + dateEnd.getFullYear() + "\'";
 
   // 'period' is the number of days
   // We need it to convert in number of milliseconds
   var milli = period * 24 * 60 * 60 * 1000;
   var past = new Date(Date.now() - milli);
-  var dateEnd = new Date(2019, past.getMonth(), past.getDate());
-  sendData.dataFinalCotacao = dateEnd.getMonth() + "-" + dateEnd.getDate() + "-" + dateEnd.getFullYear();
+  var dateBegin= new Date(2019, past.getMonth(), past.getDate());
+  sendData.dataInicial = "\'" + dateBegin.getMonth() + "-" + dateBegin.getDate() + "-" + dateBegin.getFullYear() + "\'";
 
   if(buysell === "buy" && order === "asc"){
     sendData.$orderby = "cotacaoCompra asc";
@@ -46,6 +46,25 @@ function processInput(event){
   } else {
     console.err("Something went wrong.");
   }
+
+  var url = "http://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/odata/CotacaoDolarPeriodo(dataInicial=@dataInicial,dataFinalCotacao=@dataFinalCotacao)"
+    + "?@dataInicial=" + sendData.dataInicial
+    + "&@dataFinalCotacao=" + sendData.dataFinalCotacao
+    + "&$top=1000"
+    + "&$skip=0"
+    + "&$orderby=" + sendData.$orderby
+    + "&$format=json"
+    + "&$select=" + sendData.$select;
+  console.log(url);
+  var xhr = new XMLHttpRequest();
+  xhr.open("GET", escape(url));
+  xhr.responseType = "json";
+  xhr.onreadystatechange = function () {
+    if(xhr.readyState === 4 && xhr.status === 200) {
+      console.log(xhr.responseText);
+    }
+  };
+  xhr.send();
 
   console.log(sendData);
 
