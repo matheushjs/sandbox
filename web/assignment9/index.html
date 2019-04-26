@@ -17,7 +17,7 @@
           <label>Tamanho do Período:</label>
         </div>
         <div class="col">
-          <input type="number" min="10" max="90" value="10"></input>
+          <input id="period" type="number" min="10" max="90" value="10"></input>
         </div>
       </div>
 
@@ -26,9 +26,9 @@
           <label>Venda ou Compra?</label>
         </div>
         <div class="col">
-          <select>
-            <option value="venda">Venda</option>
-            <option value="compra">Compra</option>
+          <select id="buysell">
+            <option value="sell">Venda</option>
+            <option value="buy">Compra</option>
           </select>
         </div>
       </div>
@@ -38,7 +38,7 @@
           <label>Ordenação</label>
         </div>
         <div class="col">
-          <select>
+          <select id="order">
             <option value="asc">Crescente</option>
             <option value="desc">Decrescente</option>
           </select>
@@ -48,5 +48,10 @@
       <button type="button">Buscar Cotação</button>
     </form>
 
+    <div class="center">
+      <div id="content"></div>
+    </div>
+
+    <script src="./script.js"></script>
   </body>
 </html>
