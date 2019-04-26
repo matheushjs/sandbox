@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="pt">
+  <head>
+    <meta charset="utf-8">
+    <title>Cotação do Dólar</title>
+    <link rel="stylesheet" href="style.css">
+  </head>
+
+  <body>
+    <div class="center header">
+      <h1>Cotação do Dólar</h1>
+    </div>
+
+    <form class="center">
+      <div class="group">
+        <div class="label">
+          <label>Tamanho do Período:</label>
+        </div>
+        <div class="col">
+          <input type="number" min="10" max="90" value="10"></input>
+        </div>
+      </div>
+
+      <div class="group">
+        <div class="label">
+          <label>Venda ou Compra?</label>
+        </div>
+        <div class="col">
+          <select>
+            <option value="venda">Venda</option>
+            <option value="compra">Compra</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="group">
+        <div class="label">
+          <label>Ordenação</label>
+        </div>
+        <div class="col">
+          <select>
+            <option value="asc">Crescente</option>
+            <option value="desc">Decrescente</option>
+          </select>
+        </div>
+      </div>
+
+      <button type="button">Buscar Cotação</button>
+    </form>
+
+  </body>
+</html>

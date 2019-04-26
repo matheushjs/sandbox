@@ -1,0 +1,54 @@
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  width: 100%;
+}
+
+form label {
+  width: 100%;
+}
+
+form input, form select {
+  width: 100%;
+}
+
+.header {
+  height: 30vh;
+  padding-top: 10vh;
+  background: linear-gradient(135deg, #033 0% 60%, #011);
+  color: white;
+  margin-bottom: 30px;
+}
+
+.center {
+  text-align: center;
+}
+
+.group {
+  display: flex;
+  flex-wrap: wrap;
+  max-width: 768px;
+  margin: 30px auto;
+}
+
+.col {
+  display: inline-block;
+  flex: 0 0 70%;
+  max-width: 70%;
+}
+
+.label {
+  display: inline-block;
+  flex: 0 0 30%;
+  max-width: 30%;
+  padding: 0 10px;
+  text-align: right;
+  line-height: 1.5;
+}
