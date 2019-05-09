@@ -201,3 +201,7 @@ introBtn.addEventListener("click", () => {
   var modal = document.querySelector(".modal");
   body.removeChild(modal);
 });
+
+window.onload = () => {
+  document.querySelector(".modal").focus();
+};
