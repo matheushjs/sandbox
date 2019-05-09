@@ -6,6 +6,51 @@
     <link rel="stylesheet" href="style.css">
   </head>
   <body>
+    <div class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h1><i>Elf Reaction Game!</i></h1>
+          <h3>Instructions</h3>
+        </div>
+        <div class="modal-body">
+          <h3>1. Introduction</h3>
+          <p>
+            Hello, and welcome to Elf Reaction Game!
+            In this game, you can test your reflexes against your opponent, using only one computer.
+            Each player controls two sets of 4 keys on the keyboard: WASD and IJKL.
+          </p>
+          <p>
+            After the "Start" button is pressed, the players are kept waiting for a random amount of time,
+              after which the <strong>game suddenly starts</strong> and the players
+              must <strong>follow the instructions</strong> given
+              on the screen!
+          </p>
+          <p>
+            The instructions are of the form "Press key K" or "Press key "W", and the player must press
+              the corresponding key.
+          </p>
+          <h3>2. Rules</h3>
+          <p>
+          In case one of the players <strong>presses the wrong key</strong>, they will be <strong>penalized!</strong>
+          The penalty is that the player's current score is decreased, so his
+            <strong>progress is rewinded</strong> a little.
+          </p>
+          <p>
+            That's it! Make sure to press keys as fast as you can, without pressing the wrong ones!
+          </p>
+          <h3>3. Game Complexity</h3>
+          <p>
+            We believe our version of the game is way more than 25% more complex than the original version :-).
+            For a start, the original game's javascript code had 68 lines of code, and ours has 170.
+            Winning the game requires multiple key presses, and players are penalized when they make a wrong
+              move, which also contributes a lot to the complexity of the game.
+          </p>
+        </div>
+        <div class="modal-footer">
+          <button class="intro-btn">Dismiss Tutorial</button>
+        </div>
+      </div>
+    </div>
 
     <div class="spinner"><div><p>↻</p></div></div>
 
@@ -15,7 +60,7 @@
           <h3 style="background: #0099FF;">Player 1: "W, A, S or D"</h3>
         </div>
         <div class="middlebar">
-          <button>Start game</button>
+          <button class="game-btn">Start game</button>
           <p class="result"></p>
         </div>
         <div class="p2-bar">

@@ -3,7 +3,8 @@ const spinnerContainer = document.querySelector(".spinner");
 let rotateCount = 0;
 let startTime = null;
 let rAF;
-const btn = document.querySelector("button");
+const btn = document.querySelector(".game-btn");
+const introBtn = document.querySelector(".intro-btn");
 const result = document.querySelector(".result");
 const p1bar = document.querySelector(".p1-bar");
 const p2bar = document.querySelector(".p2-bar");
@@ -167,4 +168,8 @@ result.style.display = "none";
 spinnerContainer.style.display = "none";
 
 btn.addEventListener("click", start);
-
+introBtn.addEventListener("click", () => {
+  var body = document.querySelector("body");
+  var modal = document.querySelector(".modal");
+  body.removeChild(modal);
+});
