@@ -1,0 +1,3 @@
+javascript: 68
+html: 25
+css: 106
