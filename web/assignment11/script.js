@@ -53,6 +53,7 @@ function addKey(bar, key){
 
 function setEndgame(){
   cancelAnimationFrame(rAF);
+  asyncTest();
   spinnerContainer.style.display = "none";
   result.style.display = "block";
   result.textContent = "PLAYERS GO!!";
@@ -157,12 +158,31 @@ function setEndgame(){
   });
 }
 
-async function pi(iter){
-  var sum = 0;
-  for(var i = 1; i < iter; i++){
-    sum += (1/i) * (1/i);
-  }
-  return Math.sqrt(sum * 6);
+var factp = document.querySelector("#facts-container p");
+var factbtn = document.querySelector("#facts-container button");
+var factcontainer = document.querySelector("#facts-container");
+function showFact(fact, right, bottom, left){
+  factp.textContent = fact;
+
+  factcontainer.style.right = right;
+  factcontainer.style.bottom = bottom;
+  factcontainer.style.left = left;
+  factcontainer.style.display = "block";
+
+  return new Promise( (resolve, reject) => {
+    factbtn.addEventListener("click", function f(){
+      factcontainer.style.display = "none";
+      factbtn.removeEventListener("click", f);
+      resolve();
+    });
+  });
+}
+
+async function asyncTest(){
+  await showFact("In theory, promises make this easier...", 0, 0, "");
+  await showFact("Oh, I guess they really do. Try one more time.", "", 0, 0);
+  await showFact("Seems I can show you these messages without stopping the game.", 0, 0, "");
+  await showFact("Awesome!", "", 0, 0);
 }
 
 function start(){
@@ -170,14 +190,6 @@ function start(){
   spinnerContainer.style.display = "block";
   btn.style.display = "none";
   setTimeout(setEndgame, random(2000,5000));
-
-  pi(100000000)
-  .then(value => {
-    var elem = document.querySelector(".pivalue");
-    elem.textContent = "Finished calculating π!!! It is: " + String(value);
-    elem.style.display = "block";
-    console.log("PI Value: " + String(value));
-  });
 }
 
 result.style.display = "none";
