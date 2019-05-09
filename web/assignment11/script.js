@@ -71,11 +71,62 @@ function setEndgame(){
   document.addEventListener("keydown", function keyHandler(e){
     console.log(e.key);
 
+    var addp1 = false;
+    var addp2 = false;
+
     // Check if key increases someone's score
     if(e.key === p1key){
       p1count += 1;
+      addp1 = true;
     } else if(e.key === p2key){
       p2count += 1;
+      addp2 = true;
+
+    // Now check if any player missed a key
+    } else if(p1keys.indexOf(e.key) !== -1){
+      addp1 = true;
+      p1count -= 1;
+
+      let length = p1bar.children.length;
+
+      // If has over 4 elements, remove them all
+      if(length >= 5){
+        p1bar.removeChild(p1bar.children[length-1]);
+        p1bar.removeChild(p1bar.children[length-2]);
+        p1bar.removeChild(p1bar.children[length-3]);
+        p1bar.removeChild(p1bar.children[length-4]);
+
+      // If has 2 elements, remove just them
+      } else if(length == 3){
+        p1bar.removeChild(p1bar.children[length-1]);
+        p1bar.removeChild(p1bar.children[length-2]);
+      }
+    } else if(p2keys.indexOf(e.key) !== -1){
+      addp2 = true;
+      p2count -= 1;
+
+      let length = p2bar.children.length;
+
+      // If has over 4 elements, remove them all
+      if(length >= 5){
+        p2bar.removeChild(p2bar.children[length-1]);
+        p2bar.removeChild(p2bar.children[length-2]);
+        p2bar.removeChild(p2bar.children[length-3]);
+        p2bar.removeChild(p2bar.children[length-4]);
+
+      // If has 2 elements, remove just them
+      } else if(length == 3){
+        p2bar.removeChild(p2bar.children[length-1]);
+        p2bar.removeChild(p2bar.children[length-2]);
+      }
+    }
+
+    // Fix negative score
+    if(p1count < 0){
+      p1count = 0;
+    }
+    if(p2count < 0){
+      p2count = 0;
     }
 
     // Check if any player won
@@ -92,10 +143,10 @@ function setEndgame(){
     }
 
     // If nobody won, add new key for the payer who got it right
-    if(e.key === p1key){
+    if(addp1){
       p1key = p1keys[random(0, 4)];
       addKey(p1bar, p1key);
-    } else if(e.key === p2key){
+    } else if(addp2){
       p2key = p2keys[random(0, 4)];
       addKey(p2bar, p2key);
     }
