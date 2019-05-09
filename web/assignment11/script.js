@@ -40,7 +40,7 @@ function reset(){
 
 function addKey(bar, key){
   var p = document.createElement("p");
-  p.innerHTML = "Press <strong>\'" + key + "\'</strong>!!!!!!";
+  p.innerHTML = "Press <strong>\'" + key.toUpperCase() + "\'</strong>!!!!!!";
 
   var space = document.createElement("p");
   space.classList.add("space");

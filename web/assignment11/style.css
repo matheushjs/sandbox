@@ -24,6 +24,15 @@ section {
   padding: 30px;
 }
 
+h3 {
+  text-align: center;
+  background: #0099FF;
+  padding: 2rem;
+  font-family: serif;
+  border: 3px solid black;
+  border-radius: 10px;
+}
+
 .topbar {
   height: 50%;
   display: flex;
