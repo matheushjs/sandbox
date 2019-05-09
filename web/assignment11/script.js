@@ -161,7 +161,7 @@ function start(){
   draw();
   spinnerContainer.style.display = "block";
   btn.style.display = "none";
-  setTimeout(setEndgame, random(50,100));
+  setTimeout(setEndgame, random(2000,5000));
 }
 
 result.style.display = "none";
