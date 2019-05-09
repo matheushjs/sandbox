@@ -157,11 +157,27 @@ function setEndgame(){
   });
 }
 
+async function pi(iter){
+  var sum = 0;
+  for(var i = 1; i < iter; i++){
+    sum += (1/i) * (1/i);
+  }
+  return Math.sqrt(sum * 6);
+}
+
 function start(){
   draw();
   spinnerContainer.style.display = "block";
   btn.style.display = "none";
   setTimeout(setEndgame, random(2000,5000));
+
+  pi(100000000)
+  .then(value => {
+    var elem = document.querySelector(".pivalue");
+    elem.textContent = "Finished calculating π!!! It is: " + String(value);
+    elem.style.display = "block";
+    console.log("PI Value: " + String(value));
+  });
 }
 
 result.style.display = "none";
