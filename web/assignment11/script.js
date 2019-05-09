@@ -34,6 +34,7 @@ function reset(){
   btn.style.display = "block";
   result.textContent = "";
   result.style.display = "none";
+  result.style.background = "";
   p1bar.innerHTML = p1barContent.innerHTML;
   p2bar.innerHTML = p2barContent.innerHTML;
 }
@@ -132,11 +133,13 @@ function setEndgame(){
     // Check if any player won
     if(p1count == 5){
       result.textContent = "Player 1 won!!";
+      result.style.background = "#0099FF";
       document.removeEventListener("keydown", keyHandler);
       setTimeout(reset, 5000);
       return;
     } else if(p2count == 5){
       result.textContent = "Player 2 won!!";
+      result.style.background = "#00FF99";
       document.removeEventListener("keydown", keyHandler);
       setTimeout(reset, 5000);
       return;
