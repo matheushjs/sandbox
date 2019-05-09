@@ -20,6 +20,59 @@
           <h3>Instructions</h3>
         </div>
         <div class="modal-body">
+          <h3>A. Promises & async/await</h3>
+          <p>
+            Promises and async/await are artifices that supposedly make it easier for the programmer to expose and explore parallelism within the javascript application,
+              which often results in an application that does not "hang", that is, does not become unresponsive from the user's perspective.
+          </p>
+          <p>
+          They are not the only means to do that. One can also use <i>callbacks</i>, <i>setTimeout()</i> or <i>setInterval()</i>, but Promises and async/await can yield code that is more
+              readable and less error prone.
+            They are credited, for example, for preventing what is known as the <strong>callback hell</strong>, which is a code pattern that is very difficult to understand
+              and read, and used to happen a lot before Promises came forth.
+          </p>
+          <p>
+            Promises and async/await are somewhat similar to each other, and may be used interchangeably.
+            The developer should preferably choose the one that results either in shorter code or in a code that is more self-explanatory.
+            An example of code that can better be expressed with async/await is as follows:
+            <pre>
+for(var i = 0; i < 10; i++){
+  var num = await asyncFunc();
+  doSomething(num);
+}
+...some other code</pre>
+            which could be equivalently expressed with Promises as follows:
+          <pre>
+var prom = asyncFunc().then(num => doSomething(num));
+for(var i = 0; i < 10; i++){
+  prom = prom.then(asyncFunc());
+  prom = prom.then(num => doSomething(num));
+}
+prom.then(...some other code);</pre>
+            which is clearly more difficult to read.
+          </p>
+          <h3>B. What Changed in our Game?</h3>
+          <p>
+            The game is inherently sequential, and its only asynchronous portion is dealt with by the browser's built-in function <i>addEventListener</i>.
+            In order to show how Promises and async/await work, we added a new functionality, unrelated to the game itself.
+          </p>
+          <p>
+            As soon as the game starts, the players are shown a message box with a button; as the players press the button, the messages change.
+            The most interesting part is that <strong>the game does not stop</strong> even when the players are interacting with these message boxes.
+            This was done using Promises and async/await.
+            Furthermore, the code for showing each message box became as simple as:
+            <pre>
+async function asyncTest(){
+  await showFact("In theory, promises make this easier...", 0, 0, "");
+  await showFact("Oh, I guess they really do. Try one more time.", "", 0, 0);
+  await showFact("Seems I can show you these messages without stopping the game.", 0, 0, "");
+  await showFact("Awesome!", "", 0, 0);
+}</pre>
+            which is incredibly simpler (and easy to understand!!) than what we would be able to accomplish using <i>setTimeout</i>'s.
+          </p>
+          <p>
+            We <strong>invite the reader</strong> to, after the game starts, keep the "S" button pressed while concurrently click on the message boxes' button :-).
+          </p>
           <h3>1. Introduction</h3>
           <p>
             Hello, and welcome to Elf Reaction Game!
