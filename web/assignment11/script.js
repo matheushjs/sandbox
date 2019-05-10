@@ -179,7 +179,7 @@ function showFact(fact, right, bottom, left){
 }
 
 async function asyncTest(){
-  await showFact("In theory, promises make this easier...", 0, 0, "");
+  await showFact("In theory, promises make this easier... Try holding down they 'S' key and press the buttons on this and next messages.", 0, 0, "");
   await showFact("Oh, I guess they really do. Try one more time.", "", 0, 0);
   await showFact("Seems I can show you these messages without stopping the game.", 0, 0, "");
   await showFact("Awesome!", "", 0, 0);
