@@ -44,7 +44,7 @@ for(var i = 0; i < 10; i++){
             which could be equivalently expressed with Promises as follows:
           <pre>
 var prom = asyncFunc().then(num => doSomething(num));
-for(var i = 0; i < 10; i++){
+for(var i = 1; i < 10; i++){
   prom = prom.then(asyncFunc());
   prom = prom.then(num => doSomething(num));
 }
