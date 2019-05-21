@@ -1,7 +1,7 @@
-	section	.text
-	align	4
-	global	main
-	extern	putchar
+    section  .text
+    align    4
+    global   main
+    extern   putchar
 normal_func:
     push rbp      ; salva base pointer
     mov rbp, rsp  ; salva stack pointer

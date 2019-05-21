@@ -10,7 +10,7 @@ void normal_func(function<void(void)> f){
 int main(int argc, char *argv[]){
 	int n = 5;
 	function<void(void)> lambda = [=](){
-		printf("%d\n", n);
+		putchar(n + 48);
 	};
 	normal_func(lambda);
 }
