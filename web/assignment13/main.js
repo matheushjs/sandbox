@@ -15,7 +15,7 @@
   browser.runtime.onMessage.addListener((message) => {
     if(message.command === "go"){
       console.log(message.words);
-      window.open("https://google.com/search?q=" + message.words.join("+"));
+      window.open("https://google.com/search?q=" + message.typed + "+" + message.words.join("+"));
     }
   });
 

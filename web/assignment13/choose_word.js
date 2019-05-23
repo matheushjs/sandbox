@@ -7,10 +7,13 @@ function goButton(tabs) {
     words.push(activeButs[i].textContent);
   }
 
+  var typedWord = document.querySelector("input").value;
+
   // Send list of words to the main.js
   browser.tabs.sendMessage(tabs[0].id, {
     command: "go",
-    words: words
+    words: words,
+    typed: typedWord
   });
 }
 
