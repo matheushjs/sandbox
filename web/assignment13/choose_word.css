@@ -11,15 +11,8 @@ button {
   border-radius: 5px;
 }
 
-.jumbotron {
-  margin: 0px;
-  padding: 0px;
-  height: 60px;
-  background-color: #999999;
-}
-
-.jumbotron > p {
-  padding-top: 25px;
+h1 {
+  padding-top: 30px;
 }
 
 .text-center {
@@ -31,6 +24,10 @@ button {
 
 .w-50 { width: 50%; }
 
+.btn {
+  margin: 10px 5px;
+}
+
 .btn-success:hover {
   background-color: #92f4a3ff;
 }
@@ -41,7 +38,7 @@ button {
 }
 
 
-.btn-outline-primary:hover {
+.btn-outline-primary.active {
   background-color: #67a3ff;
   color: white;
 }

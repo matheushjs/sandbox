@@ -1,3 +1,21 @@
+function goButton(tabs) {
+  var activeButs = document.querySelectorAll(".btn-outline-primary.active");
+  var words = [];
+
+  // Get the words within the active buttons
+  for(var i = 0; i < activeButs.length; i++){
+    words.push(activeButs[i].textContent);
+  }
+
+  // Send list of words to the main.js
+  browser.tabs.sendMessage(tabs[0].id, {
+    command: "go",
+    words: words
+  });
+}
+
+
+
 async function placeWords(){
   var json = await fetch("words.json")
     .then(response => { return response.json() })
@@ -13,6 +31,16 @@ async function placeWords(){
     words.push(word);
   }
 
+  var box = document.getElementById("word-box");
+
+  // For each word, we add a button
+  for(var i = 0; i < 10; i++){
+    var but = document.createElement("button");
+    but.classList = "btn btn-outline-primary";
+    but.textContent = words[i];
+    box.appendChild(but);
+  }
+
   console.log(words);
 }
 
@@ -21,34 +49,21 @@ async function placeWords(){
  * the content script in the page.
  */
 function listenForClicks() {
+  /* 'Controler' design pattern. Handles button clicks. */
   document.addEventListener("click", (e) => {
-
-    function go(tabs) {
-      browser.tabs.sendMessage(tabs[0].id, {
-        command: "reset",
-      });
-    }
-
-    /**
-     * Get the active tab,
-     * then call "beastify()" or "reset()" as appropriate.
-     */
     if(e.target.classList.contains("gobutton")){
       browser.tabs.query({active: true, currentWindow: true})
-        .then(go)
+        .then(goButton)
         .catch(() => console.error("Error."));
+    } else if(e.target.classList.contains("btn-outline-primary")){
+      e.target.classList.toggle("active");
     }
   });
 }
 
-/**
- * When the popup loads, inject a content script into the active tab,
- * and add a click handler.
- * If we couldn't inject the script, handle the error.
- */
 browser.tabs.executeScript({file: "/main.js"})
-.then(placeWords)
-.then(listenForClicks)
-.catch((e) => {
-  console.error("Fail. " + String(e));
-});
+  .then(placeWords)
+  .then(listenForClicks)
+  .catch((e) => {
+    console.error("Fail. " + String(e));
+  });

@@ -11,13 +11,11 @@
 
   /**
    * Listen for messages from the background script.
-   * Call "beastify()" or "reset()".
   */
   browser.runtime.onMessage.addListener((message) => {
-    if (message.command === "word") {
-      console.log("main.js: word");
-    } else if (message.command === "reset") {
-      console.log("main.js: reset");
+    if(message.command === "go"){
+      console.log(message.words);
+      window.open("https://google.com/search?q=" + message.words.join("+"));
     }
   });
 
