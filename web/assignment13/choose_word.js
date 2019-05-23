@@ -5,22 +5,7 @@
 function listenForClicks() {
   document.addEventListener("click", (e) => {
 
-    /**
-     * Insert the page-hiding CSS into the active tab,
-     * then get the beast URL and
-     * send a "beastify" message to the content script in the active tab.
-     */
-    function beastify(tabs) {
-      browser.tabs.sendMessage(tabs[0].id, {
-        command: "word"
-      });
-    }
-
-    /**
-     * Remove the page-hiding CSS from the active tab,
-     * send a "reset" message to the content script in the active tab.
-     */
-    function reset(tabs) {
+    function go(tabs) {
       browser.tabs.sendMessage(tabs[0].id, {
         command: "reset",
       });
@@ -30,14 +15,9 @@ function listenForClicks() {
      * Get the active tab,
      * then call "beastify()" or "reset()" as appropriate.
      */
-    if (e.target.classList.contains("beast")) {
+    if(e.target.classList.contains("gobutton")){
       browser.tabs.query({active: true, currentWindow: true})
-        .then(beastify)
-        .catch(() => console.err("Error."));
-    }
-    else if (e.target.classList.contains("reset")) {
-      browser.tabs.query({active: true, currentWindow: true})
-        .then(reset)
+        .then(go)
         .catch(() => console.err("Error."));
     }
   });
