@@ -1,0 +1,31 @@
+{
+  "manifest_version": 2,
+  "name": "Word Selector",
+  "version": "1.0",
+
+  "description": "Presents random words for the user to select & view on google search.",
+
+  "icons": {
+    "48": "border-48.png"
+  },
+
+  "applications": {
+    "gecko": {
+      "id": "wordselector@mjsaldanha.com"
+    }
+  },
+
+  "permissions": [
+    "activeTab"
+  ],
+
+  "browser_action": {
+    "default_icon": "border-48.png",
+    "default_title": "Word Selector",
+    "default_popup": "choose_word.html"
+  },
+
+  "web_accessible_resources": [
+    "words.json"
+  ]
+}
