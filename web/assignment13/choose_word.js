@@ -1,3 +1,21 @@
+async function placeWords(){
+  var json = await fetch("words.json")
+    .then(response => { return response.json() })
+    .catch(e => console.error("ERROR 1"));
+
+  var words = [];
+
+  // Then we select 10 random words
+  for(var i = 0; i < 10; i++){
+    var rand = Math.floor(Math.random() * json.length);
+    var word = json.splice(rand, 1);
+    console.log(word);
+    words.push(word);
+  }
+
+  console.log(words);
+}
+
 /**
  * Listen for clicks on the buttons, and send the appropriate message to
  * the content script in the page.
@@ -18,7 +36,7 @@ function listenForClicks() {
     if(e.target.classList.contains("gobutton")){
       browser.tabs.query({active: true, currentWindow: true})
         .then(go)
-        .catch(() => console.err("Error."));
+        .catch(() => console.error("Error."));
     }
   });
 }
@@ -29,7 +47,8 @@ function listenForClicks() {
  * If we couldn't inject the script, handle the error.
  */
 browser.tabs.executeScript({file: "/main.js"})
+.then(placeWords)
 .then(listenForClicks)
 .catch((e) => {
-  console.err("Fail. " + String(e));
+  console.error("Fail. " + String(e));
 });
