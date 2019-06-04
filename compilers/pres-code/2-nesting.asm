@@ -10,8 +10,8 @@ func1:
 	push rbp
 	mov rbp, rsp
 
-	mov rax, [rbp+16]
-	mov rbx, [rax-8]
+	mov rax, [rbp+16] ; pega o access link
+	mov rbx, [rax-8]  ; acessa 'n'
 
 	mov rdi, str
 	mov rsi, rbx
@@ -25,9 +25,10 @@ func2:
 	push rbp
 	mov rbp, rsp
 
-	mov rax, [rbp+16]
-	sub rsp, 16
-	mov [rsp], rax
+	sub rsp, 8 ; alinhamento da stack
+
+	mov rax, [rbp+16] ; pega o access link
+	push rax          ; passa access link como argumento
 	call func1
 
 	mov rsp, rbp
@@ -39,10 +40,9 @@ main:
 	mov rbp, rsp
 
 	sub rsp, 8
-	mov QWORD [rsp], 10
+	mov QWORD [rsp], 10 ; declara e inicializa n
 
-	sub rsp, 8
-	mov [rsp], rbp
+	push rbp ; passa access link como argumento
 	call func2
 
 	mov rsp, rbp
