@@ -8,26 +8,26 @@ str: db `%d\n`, 0
 
 ; int multiply(int a, int b)
 multiply:
-	mov rax, [rsp+32]
-	imul rax, [rsp+40]
-	mov [rsp+24], rax
+	push rbp
+	mov rbp, rsp
+
+	mov rax, [rsp+16]
+	imul rax, [rsp+24]
+
+	mov rsp, rbp
+	pop rbp
 	ret
 
 main:
 	push rbp
 	mov rbp, rsp
 
-	sub rsp, 32
-	mov QWORD [rsp+16], 3
-	mov QWORD [rsp+8], 4
-	push rbp
-	push rsp
+	push QWORD 3
+	push QWORD 4
 	call multiply
-	pop rsp
-	pop rbp
 
 	mov rdi, str
-	mov rsi, [rsp]
+	mov rsi, rax
 	call printf
 
 	mov rsp, rbp
