@@ -47,8 +47,7 @@ main:
 
 	; passa lambda como argumento para 'func'
 	push rbp          ; ep
-	mov rax, lambda
-	push rax          ; ip
+	push QWORD lambda ; ip
 	call func
 
 	mov rsp, rbp
