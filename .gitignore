@@ -1,5 +1,4 @@
 *.user
 *.pro
-Makefile
 prog
 build-*
