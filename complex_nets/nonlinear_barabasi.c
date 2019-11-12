@@ -6,6 +6,12 @@ int main(int argc, char *argv[]){
 	igraph_t g;
 	igraph_vector_t v;
 	int i;
+	
+	char seed;
+	FILE *fp = fopen("/dev/random", "r");
+	fread(&seed, 1, sizeof(char), fp);
+	fclose(fp);
+	srand(seed);
 
 	if(argc != 4){
 		printf("Usage: %s N m power\n", argv[0]);
