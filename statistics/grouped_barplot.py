@@ -12,7 +12,7 @@ x = np.arange(len(labels))  # the label locations
 width = 0.35                # the width of the bars
 value_offset = 0.9          # Offset of the value from the left-corner of the bar. 50% centers the value.
 
-fig, ax = plt.subplots()
+fig, ax = plt.subplots(figsize=(16, 10))
 rects1 = ax.bar(x - width/2, access_token_means, width, label="Access Token", yerr=access_token_error, color="blue", capsize=5)
 rects2 = ax.bar(x + width/2, get_data_means, width, label="Get Data", yerr=get_data_error, color="red", capsize=5)
 
