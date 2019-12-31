@@ -48,23 +48,18 @@ def date_tick(idx, date):
     else:
         return months[int(dmy[1]) - 1]
 
-fontproperties = {
-    "weight": "bold",
-    "size": 12
-}
-
 # Horizontal bars have heights on [0.6, 1.4], [1.6, 2.4], ... (depends on ywidth)
 ax.set_xlim(1, len(allDates) + 1)
 ax.set_xlabel("Months", fontsize=14, fontweight="bold", labelpad=14)
 ax.set_xticks(np.arange(1, len(allDates)+1+0.1))
 ax.set_xticks(np.arange(1, len(allDates) + 0.1)+0.5, minor=True)
 ax.set_xticklabels([ ""                for idx, d in enumerate(allDates) ])
-ax.set_xticklabels([ date_tick(idx, d) for idx, d in enumerate(allDates) ], fontproperties, minor=True)
+ax.set_xticklabels([ date_tick(idx, d) for idx, d in enumerate(allDates) ], { "weight": "bold", "size": 12 }, minor=True)
 
 # Y labels are positioned at [1, 2, 3, 4]...
 ax.set_ylim(0.5 - extraMargin, len(labels) + 0.5 + extraMargin)
 ax.set_yticks(np.arange(1, len(labels) + 0.1))
-ax.set_yticklabels(labels, fontproperties) # It is inverted later
+ax.set_yticklabels(labels, { "weight": "bold", "size": 14 }) # It is inverted later
 ax.spines["left"].set_visible(False)
 ax.spines["right"].set_visible(False)
 
