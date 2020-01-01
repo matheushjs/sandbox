@@ -1,0 +1,336 @@
+#!/usr/bin/python3
+
+import os, sys
+import matplotlib.pyplot as plt
+import numpy as np
+import subprocess as sp
+import tempfile
+import shutil
+import json
+
+# Refer to https://github.com/jiaaro/pydub/blob/master/API.markdown for the API documentation
+from pydub import AudioSegment
+
+# TODO: Allow the user to have more control over ffmpeg (output format & c:a for example)
+
+SUPPORTED_FORMATS = ["mp3", "wma", "m4a", "aac", "wav", "aiff", "flac", "ogg", "oga", "webm"]
+
+usageStr = \
+"""
+Usage: {} [options] input_file
+
+By default this program will just output useful information about the song given as argument.
+
+Options
+    -h                Displays this help message.
+    -f                Allows saving the normalized song into the input file.
+    -o filename       Defines the output filename
+    -c:v [encoders]   Sets the encoder to use for album artwork (see Details).
+    --dir [dir_path]  All files in the given directory will be processed
+    --plot            Plots the difference between original and the RMS normalized song
+    --normalize       Normalize the song. If no output file is provided, the input file is used if "-f" is specified.
+    --rms [float]     The RMS level (in dB) to which we should normalize the song.
+    --info            Print useful information (command-line friendly) about the songs
+    --oext            Defines the output extension to use for the output file when performing a directory operation (old file is erased).
+
+Details
+    -c:v
+        Sets the encoder to use for album artwork. A single value can be specified, such as "copy", or an encoder for
+        each file type can be specified by using [extension]=[encoder] pairs separated by ":". An example is as follows
+        -c:v mp3=mjpeg:m4a=libx264
+""".format(sys.argv[0])
+
+# Stores arguments passed via command line
+cmdArgs = dict()
+
+def parse_arguments():
+    if "-h" in sys.argv or len(sys.argv) == 1:
+        print(usageStr)
+        sys.exit(0)
+
+    cmdArgs["-f"] = "-f" in sys.argv
+    cmdArgs["--plot"] = "--plot" in sys.argv
+    cmdArgs["--normalize"] = "--normalize" in sys.argv
+    cmdArgs["--info"] = "--info" in sys.argv
+
+    for (cmd, TYP) in [
+                        ("--rms", float),
+                        ("-o", str),
+                        ("--dir", str),
+                        ("-c:v", str),
+                        ("--oext", str)
+                        ]:
+        if cmd in sys.argv:
+            try:
+                idx = sys.argv.index(cmd)
+                val = TYP(sys.argv[idx + 1])
+                cmdArgs[cmd] = val
+            except Exception as e:
+                print("Error parsing argument {} : {}!".format(cmd, e))
+                sys.exit(1)
+
+    if "--dir" in cmdArgs:
+        if os.path.exists(cmdArgs["--dir"]) is False:
+            print("Given directory path does not exist!")
+            sys.exit(1)
+
+        if "-o" in cmdArgs:
+            print("Cannot specify output file when performing directory operations.")
+            sys.exit(1)
+
+    if "--dir" not in cmdArgs:
+        cmdArgs["ifile"] = sys.argv[-1]                    # Input file always at the end
+        cmdArgs["iext"]  = cmdArgs["ifile"].split(".")[-1] # Extension of input file
+
+    defaultCV = dict([ (ext, "copy") for ext in SUPPORTED_FORMATS ])
+    if "-c:v" in cmdArgs:
+        CV = cmdArgs["-c:v"].split(":")
+        CV = [ enc.split("=") for enc in CV ]
+
+        # If only one encoder is given
+        if len(CV[0]) == 1:
+            for key in defaultCV:
+                defaultCV[key] = CV[0][0]
+        else:
+            # If a dictionary of encoders is given
+            CV = dict(CV)
+            defaultCV.update(CV)
+        cmdArgs["-c:v"] = defaultCV
+    else:
+        cmdArgs["-c:v"] = defaultCV
+
+    if "--rms" in cmdArgs:
+        cmdArgs["--rms"] = -abs(cmdArgs["--rms"])
+    else:
+        cmdArgs["--rms"] = -10.0
+
+    if "--oext" not in cmdArgs:
+        cmdArgs["--oext"] = "same"
+
+# Checks if the given audio is normalized based on a max-possible-amplitude normalization
+# We use a 10% tolerance from a perfect normalization)
+#
+# @return True if the given audio is normalized, False otherwise.
+def is_normalized(audio):
+    fraction = audio.max / audio.max_possible_amplitude
+
+    if fraction < 0.9:
+        return False
+    else:
+        return True
+
+def process_file(ifile, iext, oext="same"):
+    # Read the file
+    try:
+        audio = AudioSegment.from_file(ifile, iext)
+    except Exception as e:
+        raise(Exception("Audio format not supported. ({})".format(e)))
+
+    # Just a wrapper to allow us more flexibility
+    def myprint(*args, **kwargs):
+        if cmdArgs["--info"]:
+            print(*args, **kwargs)
+
+    myprint("Frame rate:", audio.frame_rate)
+    myprint("Channels:", audio.channels)
+
+    # Refer to https://en.wikipedia.org/wiki/DBFS (DeciBels relative to Full Scale)
+    # Also see https://en.wikipedia.org/wiki/Decibel for the formula
+    # 10*log10(P / P_0) where P_0 is the reference value (max power)
+    # 20*log10(A / A_0) where A_0 is the max amplitude (see the source code of pydub)
+    myprint("Max dBFS:", audio.max_dBFS)
+
+    # Get the due numpy array
+    samples = np.frombuffer(audio.raw_data, dtype=np.int16)
+    nSamples = samples.shape[0]
+
+    # We assume 2 channels, and reshape the array to 2 columns
+    samples = samples.reshape(nSamples//2, 2, order="C")
+
+    # Square root of the mean of the square of each sample https://en.wikipedia.org/wiki/Root_mean_square
+    # NOTE: A nice strategy could be calculate rms over all 1- or 5-second windows, and let the rms be the maximum one
+    def get_rms(samples, freq=44100, channels=2, p=4):
+        # Below gave nice results too. Could investigate it further
+        # powers = 20*np.log10(np.abs(samples, dtype=np.float64) + 1)
+        # powers = np.power(powers * (np.max(samples) / np.max(powers)), 2, dtype=np.float64)
+
+        windowSize = round(freq * channels * 0.4) # 0.4 seconds
+        myprint("No. Windows:", samples.size // windowSize)
+
+        # If there are less than 10 windows, do the usual normalization
+        if samples.size / windowSize < 10:
+            powers = np.power(samples, p, dtype=np.float64)
+        else:
+            # Else downsample the song by max-pooling each window
+            # TODO: We must use some overlapping here.
+            powers = samples.ravel()
+            # Discard some samples so that it is evenly divided
+            powers = powers[0:len(powers) - len(powers)%windowSize]
+            powers = np.max(np.abs(powers.reshape(-1, windowSize)), axis=1)
+            powers = np.power(powers, p, dtype=np.float64)
+
+        if np.sum(powers < 0) > 0:
+            raise(Exception("Numeric overflow detected."))
+
+        return np.power(np.mean(powers), 1/p)
+
+    def to_db(value, maxValue):
+        return 20 * np.log10(value / maxValue)
+
+    def from_db(valueDb, maxValue):
+        return np.power(10, valueDb/20) * maxValue
+
+    # We use the property RMS(a*X) = a*RMS(X)
+    def get_rms_normalization_factor(rmsValue, maxValue, normLevelDb=-17):
+        normLevel = from_db(normLevelDb, maxValue)
+        return normLevel / rmsValue
+
+    myprint("Max-amplitude Normalized:", is_normalized(audio))
+
+    rms = get_rms(samples, audio.frame_rate, audio.channels)
+    myprint("RMS:", to_db(rms, audio.max_possible_amplitude), "dB")
+
+    factor = float(get_rms_normalization_factor(rms, audio.max_possible_amplitude, cmdArgs["--rms"]))
+    myprint("Gain: {:.5f} x".format(factor))
+
+    # In the original audio, samples large than 'clippingBound' will be clipped
+    clippingBound = audio.max_possible_amplitude / factor
+
+    # We need to preserve the values even if they are clipped, so we increase precision
+    normalized = samples.astype(np.int32, copy=True)
+    normalized.dtype = np.int32 # Was int16
+
+    # Calculate number of clipped samples
+    idx = np.abs(normalized) > clippingBound
+    clipCount = np.sum(idx)
+
+    if clipCount > 0:
+        print("Samples_Clipped: {} ({:.5f}%)".format(clipCount, clipCount / len(samples) * 100))
+
+    # Effectively normalize the song
+    normalized = normalized * factor
+
+    # Calculate gain
+    normalizedMax = np.max(np.abs( [normalized.max(), normalized.min()] ))
+    gainDb = to_db(normalizedMax, audio.max) # NOTE: if normalizedMax is clipped, this will be wrong!
+    myprint("Gain:", gainDb, "dB")
+
+    myprint("New_Maximum_dBFS:", to_db(np.max(np.abs(normalized)), audio.max_possible_amplitude), "dB")
+    myprint("New_RMS:", to_db(get_rms(normalized, audio.frame_rate, audio.channels), audio.max_possible_amplitude), "dB")
+
+    if cmdArgs["--plot"]:
+        plt.figure(dpi=150)
+        plt.title("Changes made to the song (just a fraction of the song)")
+        if factor < 1:
+            plt.plot(samples[:100000,0], c="blue", label="Old")
+            plt.plot(normalized[:100000,0], c="red", label="New")
+        else:
+            plt.plot(normalized[:100000,0], c="red", label="New")
+            plt.plot(samples[:100000,0], c="blue", label="Old")
+
+        plt.legend()
+        plt.show()
+
+    if cmdArgs["--normalize"]:
+        # NOTE: The ffmpeg command to normalize is: ffmpeg -i never_coming_back.mp3 -af "volume=volume=4.65dB:replaygain=drop" -c:v copy output.mp3
+        if oext is "same":
+            auxFile = tempfile.mktemp() + "." + iext
+        else:
+            auxFile = tempfile.mktemp() + "." + oext
+        outputFile = ""
+        eraseFile  = ""
+
+        # If file was provided, OK. If it was not, we overwrite the input file.
+        try:
+            outputFile = cmdArgs["-o"]
+        except Exception:
+            if cmdArgs["-f"]:
+                if oext is "same":
+                    outputFile = ifile
+                else:
+                    s = ifile.split(".")
+                    s[-1] = oext
+                    outputFile = ".".join(s)
+                    if ifile != outputFile:
+                        eraseFile = ifile
+            else:
+                raise(Exception("ERROR: To overwrite the original file, please specify '-f'."))
+
+        # Normalize song
+        stderr = open(tempfile.mktemp(), "w+")
+        try:
+            sp.run([
+                "ffmpeg",
+                "-i", ifile,
+                "-af", "volume=volume={}:replaygain=drop".format(factor),
+                "-c:v", cmdArgs["-c:v"][iext],
+                "-y", # Assume yes
+                "-loglevel", "warning",
+                auxFile
+            ],
+            check=True,
+            stdout=sp.DEVNULL,
+            stderr=stderr)
+
+            shutil.move(auxFile, outputFile)
+            if eraseFile:
+                os.unlink(eraseFile)
+        except Exception as e:
+            stderr.seek(0)
+            raise Exception("Error while running external commands (ffmpeg and mv)\n{}\n{}".format(e, stderr.read()))
+        stderr.close()
+
+    # The procedures below DO NOT preserve metadata!
+    #audio.normalize(0)
+    #audio.export("output.mp3", format="mp3")
+
+    # plt.figure()
+    # plt.plot(samples[:,0])
+    # plt.show()
+
+
+
+
+##########################
+#     MAIN CODE          #
+##########################
+
+parse_arguments()
+
+if "--dir" not in cmdArgs:
+    if "-o" in cmdArgs:
+        process_file(cmdArgs["ifile"], cmdArgs["iext"], cmdArgs["-o"].split(".")[-1])
+    else:
+        process_file(cmdArgs["ifile"], cmdArgs["iext"])
+else:
+    allFiles = sp.check_output("find {} -type f".format(cmdArgs["--dir"]).split(" "))
+    allFiles = bytes.decode(allFiles, encoding="utf8")
+    allFiles = allFiles.split("\n")
+
+    getext = lambda x: x.split(".")[-1]
+
+    # Filter files
+    allFiles = [ i for i in allFiles if getext(i) in SUPPORTED_FORMATS ]
+    allFiles = sorted(allFiles)
+    nFiles = len(allFiles)
+
+    debugInfo = {
+                "exceptions": [],
+                "failedFiles": []
+            }
+
+    for idx, ifile in enumerate(allFiles):
+        print("({}/{}) Processing file '{}' ".format(idx+1, nFiles, ifile))
+        iext = getext(ifile)
+
+        try:
+            process_file(ifile, iext, cmdArgs["--oext"])
+        except Exception as e:
+            print("Exception on file {}: {}".format(ifile, e))
+            debugInfo["exceptions"].append(str(e))
+            debugInfo["failedFiles"].append(ifile)
+
+    if len(debugInfo["exceptions"]) > 0:
+        print("Debug information being dumped to 'elf-normalize.out'")
+        with open("elf-normalize.out", "w") as fp:
+            json.dump(debugInfo, fp, indent=2)
