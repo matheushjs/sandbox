@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/python3 -i
 
 import os, sys
 import matplotlib.pyplot as plt
@@ -196,17 +196,17 @@ def process_file(ifile, iext):
     myprint("New_Maximum_dBFS:", to_db(np.max(np.abs(normalized)), audio.max_possible_amplitude), "dB")
     myprint("New_RMS:", to_db(get_rms(normalized, audio.frame_rate, audio.channels), audio.max_possible_amplitude), "dB")
 
-    plt.figure(dpi=150)
-    plt.title("Changes made to the song (just a fraction of the song)")
-    if factor < 1:
-        plt.plot(samples[:100000,0], c="blue", label="Old")
-        plt.plot(normalized[:100000,0], c="red", label="New")
-    else:
-        plt.plot(normalized[:100000,0], c="red", label="New")
-        plt.plot(samples[:100000,0], c="blue", label="Old")
-
-    plt.legend()
-    plt.show()
+    #plt.figure(dpi=150)
+    #plt.title("Changes made to the song (just a fraction of the song)")
+    #if factor < 1:
+    #    plt.plot(samples[:100000,0], c="blue", label="Old")
+    #    plt.plot(normalized[:100000,0], c="red", label="New")
+    #else:
+    #    plt.plot(normalized[:100000,0], c="red", label="New")
+    #    plt.plot(samples[:100000,0], c="blue", label="Old")
+    #
+    #plt.legend()
+    #plt.show()
 
     # Normalize in [-yResolution, yResolution]
     samples = samples / audio.max_possible_amplitude
@@ -219,8 +219,10 @@ def process_file(ifile, iext):
     #plt.figure(figsize=(12, 6))
     #plt.imshow(mat)
     #plt.show()
-    plt.plot(np.arange(samples.shape[0]), samples[:,0], c="#0000FF77")
-    plt.show()
+    #plt.plot(np.arange(samples.shape[0]), samples[:,0], c="#0000FF77")
+    #plt.show()
+
+    return (samples, normalized)
 
 ##########################
 #     MAIN CODE          #
@@ -237,11 +239,17 @@ debugInfo = {
             "failedFiles": []
         }
 
+# Will hold audio data for all audio files given on command line
+allSamples = []
+allNormalized = []
+
 for idx, (ifile, iext) in enumerate(zip(allFiles, cmdArgs["iexts"])):
     print("({}/{}) Processing file '{}' ".format(idx+1, nFiles, ifile))
 
     try:
-        process_file(ifile, iext)
+        samples, normalized = process_file(ifile, iext)
+        allSamples.append(samples)
+        allNormalized.append(normalized)
     except Exception as e:
         print("Exception on file {}: {}".format(ifile, e))
         debugInfo["exceptions"].append(str(e))
@@ -251,3 +259,15 @@ if len(debugInfo["exceptions"]) > 0:
     print("Debug information being dumped to 'elf-normalize.out'")
     with open("elf-normalize.out", "w") as fp:
         json.dump(debugInfo, fp, indent=2)
+
+plt.figure(figsize=(9, 9))
+
+curOffset = 0
+for samp, norm in zip(allSamples, allNormalized):
+    seq = np.arange(samp.shape[0]) + curOffset
+    plt.plot(seq, norm[:,0], c="#0000FF77")
+    plt.plot(seq, samp[:,0], c="darkred")
+    curOffset += samp.shape[0]
+    print(curOffset)
+
+plt.show()
