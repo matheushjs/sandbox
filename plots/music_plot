@@ -66,82 +66,66 @@ def parse_arguments():
     else:
         cmdArgs["--rms"] = -10.0
 
-# Checks if the given audio is normalized based on a max-possible-amplitude normalization
-# We use a 10% tolerance from a perfect normalization)
-#
-# @return True if the given audio is normalized, False otherwise.
-def is_normalized(audio):
-    fraction = audio.max / audio.max_possible_amplitude
+# Just a wrapper to allow us more flexibility
+def myprint(*args, **kwargs):
+    print(*args, **kwargs)
 
-    if fraction < 0.9:
-        return False
-    else:
-        return True
+class MyAudio:
+    def __init__(self, ifile, ext, gain=None):
+        self.ifile = ifile
+        self.ext   = ext
 
-def read_audio(ifile, iext):
-    # Read the file
-    try:
-        audio = AudioSegment.from_file(ifile, iext)
-        # force 2 channels
-        audio.set_channels(2)
-    except Exception as e:
-        raise(Exception("Audio format not supported. ({})".format(e)))
+        # Read the file
+        try:
+            self.audio = AudioSegment.from_file(ifile, iext)
+            self.audio.set_channels(2) # force 2 channels
+        except Exception as e:
+            raise(Exception("Audio format not supported. ({})".format(e)))
 
-    # Attention to the useful methods of 'audio'!
-    #
-    # audio.rms              audio.append(            audio.low_pass_filter(       audio.high_pass_filter( audio.sample_width
-    # audio.apply_gain(      audio.max audio.max_dBFS audio.max_possible_amplitude audio.array_type        audio.set_channels(
-    # audio.channels         audio.frame_count        audio.get_array_of_samples   audio.frame_rate        audio.get_dc_offset(
-    # audio.frame_width      audio.get_frame(         audio.raw_data               audio.dBFS              audio.from_file(
-    # audio.duration_seconds audio.reverse(
+        if gain:
+            self.audio = self.audio.apply_gain(gain)
 
-    return audio
+        self.rms                    = self.audio.rms
+        self.sample_width           = self.audio.sample_width
+        self.max                    = self.audio.max
+        self.max_dBFS               = self.audio.max_dBFS
+        self.max_possible_amplitude = self.audio.max_possible_amplitude
+        self.channels               = self.audio.channels
+        self.frame_count            = self.audio.frame_count
+        self.frame_rate             = self.audio.frame_rate
+        self.frame_width            = self.audio.frame_width
+        self.dBFS                   = self.audio.dBFS
+        self.duration_seconds       = self.audio.duration_seconds
 
-def audio_raw_data(audio):
-    samples = np.frombuffer(audio.raw_data, dtype=np.int16)
-    nSamples = samples.shape[0]
-    # We assume 2 channels, and reshape the array to 2 columns
-    samples = samples.reshape(nSamples//2, 2, order="C")
+        self.samples = np.frombuffer(self.audio.raw_data, dtype=np.int16) # assume signed 16 bit
+        self.nSamples = self.samples.shape[0]
+        self.samples = self.samples.reshape(self.nSamples//2, 2, order="C") # assume 2 channels, reshape the array to 2 columns
 
-    return samples
-
-def process_file(ifile, iext):
-    audio = read_audio(ifile, iext)
-
-    # Just a wrapper to allow us more flexibility
-    def myprint(*args, **kwargs):
-        print(*args, **kwargs)
-
-    myprint("Frame rate:", audio.frame_rate)
-    myprint("Channels:", audio.channels)
-
-    # Refer to https://en.wikipedia.org/wiki/DBFS (DeciBels relative to Full Scale)
-    # Also see https://en.wikipedia.org/wiki/Decibel for the formula
-    # 10*log10(P / P_0) where P_0 is the reference value (max power)
-    # 20*log10(A / A_0) where A_0 is the max amplitude (see the source code of pydub)
-    myprint("Max dBFS:", audio.max_dBFS)
-
-    # Get the due numpy array
-    samples = audio_raw_data(audio)
-    nSamples = samples.shape[0]
+        # Attention to the useful methods of 'audio'!
+        #
+        # audio.rms              audio.append(     audio.low_pass_filter(      audio.high_pass_filter(      audio.sample_width
+        # audio.apply_gain(      audio.max         audio.max_dBFS              audio.max_possible_amplitude audio.array_type
+        # audio.channels         audio.frame_count audio.get_array_of_samples  audio.frame_rate             audio.get_dc_offset(
+        # audio.frame_width      audio.get_frame(  audio.raw_data              audio.dBFS                   audio.from_file(
+        # audio.duration_seconds audio.reverse(    audio.set_channels(
 
     # Square root of the mean of the square of each sample https://en.wikipedia.org/wiki/Root_mean_square
     # NOTE: A nice strategy could be calculate rms over all 1- or 5-second windows, and let the rms be the maximum one
-    def get_rms(samples, freq=44100, channels=2, p=4):
+    def my_rms(self, p=4):
         # Below gave nice results too. Could investigate it further
         # powers = 20*np.log10(np.abs(samples, dtype=np.float64) + 1)
         # powers = np.power(powers * (np.max(samples) / np.max(powers)), 2, dtype=np.float64)
 
-        windowSize = round(freq * channels * 0.4) # 0.4 seconds
-        myprint("No. Windows:", samples.size // windowSize)
+        windowSize = round(self.frame_rate * self.channels * 0.4) # 0.4 seconds
+        myprint("No. Windows:", self.samples.size // windowSize)
 
         # If there are less than 10 windows, do the usual normalization
-        if samples.size / windowSize < 10:
-            powers = np.power(samples, p, dtype=np.float64)
+        if self.samples.size / windowSize < 10:
+            powers = np.power(self.samples, p, dtype=np.float64)
         else:
             # Else downsample the song by max-pooling each window
             # TODO: We must use some overlapping here.
-            powers = samples.ravel()
+            powers = self.samples.ravel()
             # Discard some samples so that it is evenly divided
             powers = powers[0:len(powers) - len(powers)%windowSize]
             powers = np.max(np.abs(powers.reshape(-1, windowSize)), axis=1)
@@ -151,6 +135,29 @@ def process_file(ifile, iext):
             raise(Exception("Numeric overflow detected."))
 
         return np.power(np.mean(powers), 1/p)
+
+    # Checks if the given audio is normalized based on a max-possible-amplitude normalization
+    # We use a 10% tolerance from a perfect normalization)
+    #
+    # @return True if the given audio is normalized, False otherwise.
+    def is_normalized(self):
+        fraction = self.max / self.max_possible_amplitude
+        return False if fraction < 0.9 else True
+
+    def apply_gain(self, gain):
+        return MyAudio(self.ifile, self.ext, gain)
+
+def process_file(ifile, iext):
+    audio = MyAudio(ifile, iext)
+
+    myprint("Frame rate:", audio.frame_rate)
+    myprint("Channels:", audio.channels)
+
+    # Refer to https://en.wikipedia.org/wiki/DBFS (DeciBels relative to Full Scale)
+    # Also see https://en.wikipedia.org/wiki/Decibel for the formula
+    # 10*log10(P / P_0) where P_0 is the reference value (max power)
+    # 20*log10(A / A_0) where A_0 is the max amplitude (see the source code of pydub)
+    myprint("Max dBFS:", audio.max_dBFS)
 
     def to_db(value, maxValue):
         return 20 * np.log10(value / maxValue)
@@ -163,9 +170,9 @@ def process_file(ifile, iext):
         normLevel = from_db(normLevelDb, maxValue)
         return normLevel / rmsValue
 
-    myprint("Max-amplitude Normalized:", is_normalized(audio))
+    myprint("Max-amplitude Normalized:", audio.is_normalized())
 
-    rms = get_rms(samples, audio.frame_rate, audio.channels)
+    rms = audio.my_rms()
     myprint("RMS:", to_db(rms, audio.max_possible_amplitude), "dB")
 
     factor = float(get_rms_normalization_factor(rms, audio.max_possible_amplitude, cmdArgs["--rms"]))
@@ -175,7 +182,7 @@ def process_file(ifile, iext):
     clippingBound = audio.max_possible_amplitude / factor
 
     # We need to preserve the values even if they are clipped, so we increase precision
-    normalized = samples.astype(np.int32, copy=True)
+    normalized = audio.samples.astype(np.int32, copy=True)
     normalized.dtype = np.int32 # Was int16
 
     # Calculate number of clipped samples
@@ -183,18 +190,19 @@ def process_file(ifile, iext):
     clipCount = np.sum(idx)
 
     if clipCount > 0:
-        print("Samples_Clipped: {} ({:.5f}%)".format(clipCount, clipCount / len(samples) * 100))
-
-    # Effectively normalize the song
-    normalized = normalized * factor
+        myprint("Samples_Clipped: {} ({:.5f}%)".format(clipCount, clipCount / len(audio.samples) * 100))
 
     # Calculate gain
+    normalized = normalized * factor
     normalizedMax = np.max(np.abs( [normalized.max(), normalized.min()] ))
     gainDb = to_db(normalizedMax, audio.max) # NOTE: if normalizedMax is clipped, this will be wrong!
     myprint("Gain:", gainDb, "dB")
 
+    # Effectively normalize the song
+    normalizedAudio = audio.apply_gain(gainDb)
+
     myprint("New_Maximum_dBFS:", to_db(np.max(np.abs(normalized)), audio.max_possible_amplitude), "dB")
-    myprint("New_RMS:", to_db(get_rms(normalized, audio.frame_rate, audio.channels), audio.max_possible_amplitude), "dB")
+    myprint("New_RMS:", to_db(normalizedAudio.my_rms(), normalizedAudio.max_possible_amplitude), "dB")
 
     #plt.figure(dpi=150)
     #plt.title("Changes made to the song (just a fraction of the song)")
@@ -208,10 +216,6 @@ def process_file(ifile, iext):
     #plt.legend()
     #plt.show()
 
-    # Normalize in [-yResolution, yResolution]
-    samples = samples / audio.max_possible_amplitude
-    normalized = normalized / audio.max_possible_amplitude
-
     #mat = np.zeros((yResolution, songLen))
     #for i in range(songLen):
     #    idx = samples[i, 0]
@@ -222,7 +226,7 @@ def process_file(ifile, iext):
     #plt.plot(np.arange(samples.shape[0]), samples[:,0], c="#0000FF77")
     #plt.show()
 
-    return (samples, normalized)
+    return (audio, normalizedAudio)
 
 ##########################
 #     MAIN CODE          #
@@ -247,9 +251,9 @@ for idx, (ifile, iext) in enumerate(zip(allFiles, cmdArgs["iexts"])):
     print("({}/{}) Processing file '{}' ".format(idx+1, nFiles, ifile))
 
     try:
-        samples, normalized = process_file(ifile, iext)
-        allSamples.append(samples)
-        allNormalized.append(normalized)
+        before, normalized = process_file(ifile, iext)
+        allSamples.append(before.samples)
+        allNormalized.append(normalized.samples)
     except Exception as e:
         print("Exception on file {}: {}".format(ifile, e))
         debugInfo["exceptions"].append(str(e))
@@ -268,9 +272,10 @@ for samp, norm in zip(allSamples, allNormalized):
     line1, = plt.plot(seq, norm[:,0], c="#0000FF77")
     line2, = plt.plot(seq, samp[:,0], c="darkred")
     curOffset += samp.shape[0]
-    print(curOffset)
 
 line1.set_label("After Norm")
 line2.set_label("Before Norm")
+plt.tight_layout()
+plt.ylim(-38000, +38000)
 plt.legend()
 plt.show()

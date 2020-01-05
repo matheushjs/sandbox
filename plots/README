@@ -8,6 +8,9 @@ play -n -r 16000 -b 16 synth 2 0 0 100 pluck C1
 # We can also normalize it
 play -n -r 16000 -b 16 synth 2 0 0 100 pluck C1 norm -1
 
+# A script to generate all chords:
+for i in {1..8}; do sox -n -r 16000 -b 16 testC$i.wav synth 2 0 0 100 pluck C$i norm -1; done
+
 
 # To save, you must change 'play' to 'sox' and add the filename before 'synth':
 sox -n -r 16000 -b 16 test.wav synth 2 pluck C1
