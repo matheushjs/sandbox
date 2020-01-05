@@ -252,8 +252,8 @@ for idx, (ifile, iext) in enumerate(zip(allFiles, cmdArgs["iexts"])):
 
     try:
         before, normalized = process_file(ifile, iext)
-        allSamples.append(before.samples)
-        allNormalized.append(normalized.samples)
+        allSamples.append(before)
+        allNormalized.append(normalized)
     except Exception as e:
         print("Exception on file {}: {}".format(ifile, e))
         debugInfo["exceptions"].append(str(e))
@@ -268,10 +268,10 @@ plt.figure(figsize=(9, 9))
 
 curOffset = 0
 for samp, norm in zip(allSamples, allNormalized):
-    seq = np.arange(samp.shape[0]) + curOffset
-    line1, = plt.plot(seq, norm[:,0], c="#0000FF77")
-    line2, = plt.plot(seq, samp[:,0], c="darkred")
-    curOffset += samp.shape[0]
+    seq = np.arange(samp.samples.shape[0]) + curOffset
+    line1, = plt.plot(seq, norm.samples[:,0], c="#0000FF77")
+    line2, = plt.plot(seq, samp.samples[:,0], c="darkred")
+    curOffset += samp.samples.shape[0]
 
 line1.set_label("After Norm")
 line2.set_label("Before Norm")
@@ -279,3 +279,8 @@ plt.tight_layout()
 plt.ylim(-38000, +38000)
 plt.legend()
 plt.show()
+
+n = allNormalized[0].audio
+for m in allNormalized[1:]:
+    n = n + m.audio
+n.export(open("normalized.wav", "wb"), format="wav")
