@@ -265,9 +265,12 @@ plt.figure(figsize=(9, 9))
 curOffset = 0
 for samp, norm in zip(allSamples, allNormalized):
     seq = np.arange(samp.shape[0]) + curOffset
-    plt.plot(seq, norm[:,0], c="#0000FF77")
-    plt.plot(seq, samp[:,0], c="darkred")
+    line1, = plt.plot(seq, norm[:,0], c="#0000FF77")
+    line2, = plt.plot(seq, samp[:,0], c="darkred")
     curOffset += samp.shape[0]
     print(curOffset)
 
+line1.set_label("After Norm")
+line2.set_label("Before Norm")
+plt.legend()
 plt.show()

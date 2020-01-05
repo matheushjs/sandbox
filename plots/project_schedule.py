@@ -5,7 +5,7 @@ import datetime as dt
 labels = ["1. Formulation", "2. Propose\nMethods", "3. Implement\nMethods", "4. Literature", "5. Articles", "6. Reports"]
 times  = {
     labels[0]: [(1, 7)], # Must be on format [(from, width), (from, width), ...]
-    labels[1]: [(2, 9)],
+    labels[1]: [(2, 8)],
     labels[2]: [(2, 9)],
     labels[3]: [(1, 12)],
     labels[4]: [(8, 4)],
@@ -28,12 +28,12 @@ plt.rcParams["xtick.top"]    = plt.rcParams["xtick.labeltop"] = True
 plt.rcParams["ytick.minor.size"] = 0
 plt.rcParams["ytick.major.size"] = 0
 
-fig, ax = plt.subplots(figsize=(12, 6))
+fig, ax = plt.subplots(figsize=(16, 8))
 ax.set_facecolor("#d7d7d7")
 
 # Add the horizontal bars
 for idx, label in enumerate(labels):
-    ax.broken_barh(times[label], (idx + 1 - ywidth/2, ywidth), facecolors="#126262", zorder=2)
+    ax.broken_barh(times[label], (idx + 1 - ywidth/2, ywidth), facecolors="#126262", zorder=2, edgecolor="black", linewidth=1.5)
 
 # Generate all months of the project
 allDates = [ initDate + dt.timedelta(days=31*i) for i in range(12) ]
@@ -50,16 +50,16 @@ def date_tick(idx, date):
 
 # Horizontal bars have heights on [0.6, 1.4], [1.6, 2.4], ... (depends on ywidth)
 ax.set_xlim(1, len(allDates) + 1)
-ax.set_xlabel("Months", fontsize=14, fontweight="bold", labelpad=14)
+ax.set_xlabel("Months", fontsize=20, fontweight="bold", labelpad=14)
 ax.set_xticks(np.arange(1, len(allDates)+1+0.1))
 ax.set_xticks(np.arange(1, len(allDates) + 0.1)+0.5, minor=True)
 ax.set_xticklabels([ ""                for idx, d in enumerate(allDates) ])
-ax.set_xticklabels([ date_tick(idx, d) for idx, d in enumerate(allDates) ], { "weight": "bold", "size": 12 }, minor=True)
+ax.set_xticklabels([ date_tick(idx, d) for idx, d in enumerate(allDates) ], { "weight": "bold", "size": 16 }, minor=True)
 
 # Y labels are positioned at [1, 2, 3, 4]...
 ax.set_ylim(0.5 - extraMargin, len(labels) + 0.5 + extraMargin)
 ax.set_yticks(np.arange(1, len(labels) + 0.1))
-ax.set_yticklabels(labels, { "weight": "bold", "size": 14 }) # It is inverted later
+ax.set_yticklabels(labels, { "weight": "bold", "size": 20 }) # It is inverted later
 ax.spines["left"].set_visible(False)
 ax.spines["right"].set_visible(False)
 

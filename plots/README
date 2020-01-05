@@ -1,0 +1,22 @@
+
+# Plays a song playing the C1 note using the 'pluck' sound wave (16KHz, 16 bits)
+play -n -r 16000 -b 16 synth 2 pluck C1
+
+# The following sustains the note for longer (I think)
+play -n -r 16000 -b 16 synth 2 0 0 100 pluck C1
+
+# We can also normalize it
+play -n -r 16000 -b 16 synth 2 0 0 100 pluck C1 norm -1
+
+
+# To save, you must change 'play' to 'sox' and add the filename before 'synth':
+sox -n -r 16000 -b 16 test.wav synth 2 pluck C1
+
+
+sox -n -r 16000 -b 16 "test.wav" synth pluck C1 fade 0 1
+sox -n -r 16000 -b 16 "test.wav" synth pluck C1 pl E1 pl G1 delay 0 .1 .2 remix - fade 0 5 .095 norm -1
+
+Conversão de mp3 para wav
+
+sox audio.mp3 -r 16000 audio.wav
+
