@@ -8,9 +8,22 @@ play -n -r 16000 -b 16 synth 2 0 0 100 pluck C1
 # We can also normalize it
 play -n -r 16000 -b 16 synth 2 0 0 100 pluck C1 norm -1
 
-# A script to generate all chords:
-for i in {1..8}; do sox -n -r 16000 -b 16 testC$i.wav synth 2 0 0 100 pluck C$i norm -1; done
+# A script to generate all octaves of a note:
+for i in {1..8}; do sox -n -r 16000 -b 16 testC$i.wav synth 2 0 0 100 pluck C$i norm -1 gain -3; done
 
+# A script to generate a chord in different volume levels; each is the first one multiplied by a natural number i.
+i=1
+for gain in 0.00 6.02 9.54 12.04 13.97 15.56 16.90 18.06; do
+  sox -n -r 16000 -b 16 "level-$i.wav" synth pl G2 pl B2 pl D3 pl G3 pl D4 pl G4 \
+    delay 0 .03 .06 .09 .12 .15 \
+    remix - \
+    fade 0 4 .1 \
+    norm -1 \
+    gain -18.06 \
+    gain $gain;
+    i=$(( $i + 1 ));
+done;
+sox --combine concatenate level-*.wav levels.wav;
 
 # To save, you must change 'play' to 'sox' and add the filename before 'synth':
 sox -n -r 16000 -b 16 test.wav synth 2 pluck C1
