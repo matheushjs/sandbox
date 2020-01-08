@@ -29,10 +29,6 @@ sox --combine concatenate level-*.wav levels.wav;
 sox -n -r 16000 -b 16 test.wav synth 2 pluck C1
 
 
-sox -n -r 16000 -b 16 "test.wav" synth pluck C1 fade 0 1
-sox -n -r 16000 -b 16 "test.wav" synth pluck C1 pl E1 pl G1 delay 0 .1 .2 remix - fade 0 5 .095 norm -1
-
-Conversão de mp3 para wav
-
-sox audio.mp3 -r 16000 audio.wav
-
+# Conclusions so far:
+#   - The present normalization procedure is useless concerning how treble notes are louder; on the contrary, it seems to go against this.
+#   - Using the same chord to test the normalization procedure is useless. Try different chords in different volume levels.
