@@ -14,12 +14,13 @@ times  = {
 ywidth      = 0.7 # Width of the horizontal bars
 extraMargin = 0.5 # Top-most and bottom-most margins
 initDate    = dt.date(year=2020, month=2, day=1)
-nMonths     = 24  # Number of months in the gantt chart
-minInterval = 2   # The minimal interval a task can use
+nMonths     = 12  # Number of months in the gantt chart
+minInterval = 1   # The minimal interval a task can use
 titleSize   = 20  # font size
 yTextPt     = 20  # font size
 xTextPt     = 16  # font size
-monthRepr   = "NUMBER" # "NUMBER" or "TEXT"
+monthRepr   = "TEXT" # "NUMBER", "TEXT" or "INDEX" to represent months
+monthRange  = False # Show months as a range such as Feb-Apr instead of just Feb. Does not work with monthRepr = "INDEX"
 
 # Increase size of labels. Set any of them to a wrong value, and the error will tell you what are valid values.
 # print(plt.rcParams.keys())
@@ -48,22 +49,34 @@ allDates = [ initDate + dt.timedelta(days=31*i) for i in range(nMonths) if i % m
 # "idx" is the index of the xtick, and date is the date in the format "YYYY-MM-DD"
 SAVED_YEAR = ""
 def date_tick(idx, date):
-    global SAVED_YEAR, minInterval, monthRepr
+    global SAVED_YEAR, minInterval, monthRepr, monthRange
 
     if monthRepr.upper() == "TEXT":
         months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
     elif monthRepr.upper() == "NUMBER":
         months = [ str(i) for i in range(1, 13) ]
+    elif monthRepr.upper() == "INDEX":
+        if monthRange:
+            raise Exception("monthRepr as 'Index' does not work with monthRange to be True.");
+        months = [ str(i // minInterval + 1) for i in range(0, 12) ]
     else:
-        raise Exception("monthRepr can only be 'TEXT' or 'NUMBER'.");
+        raise Exception("monthRepr can only be 'TEXT', 'NUMBER' or 'INDEX'.");
 
     dmy = str(date).split("-")[::-1]
-    year = int(dmy[2])
+    month = int(dmy[1])
+    year  = int(dmy[2])
+
+    # Create month representation
+    if monthRange is True and minInterval > 1:
+        monthTick = months[month - 1] + "-" + months[(month - 1 + minInterval - 1) % 12]
+    else:
+        monthTick = months[month - 1]
+
     if year != SAVED_YEAR:
         SAVED_YEAR = year
-        return dmy[2] + "\n" + months[int(dmy[1]) - 1]
+        return dmy[2] + "\n" + monthTick
     else:
-        return months[int(dmy[1]) - 1]
+        return monthTick
 
 # Horizontal bars have heights on [0.6, 1.4], [1.6, 2.4], ... (depends on ywidth)
 ax.set_xlim(1, len(allDates) + 1)
