@@ -14,11 +14,12 @@ times  = {
 ywidth      = 0.7 # Width of the horizontal bars
 extraMargin = 0.5 # Top-most and bottom-most margins
 initDate    = dt.date(year=2020, month=2, day=1)
-nMonths     = 12  # Number of months in the gantt chart
-minInterval = 1   # The minimal interval a task can use
+nMonths     = 24  # Number of months in the gantt chart
+minInterval = 2   # The minimal interval a task can use
 titleSize   = 20  # font size
 yTextPt     = 20  # font size
 xTextPt     = 16  # font size
+monthRepr   = "NUMBER" # "NUMBER" or "TEXT"
 
 # Increase size of labels. Set any of them to a wrong value, and the error will tell you what are valid values.
 # print(plt.rcParams.keys())
@@ -47,11 +48,19 @@ allDates = [ initDate + dt.timedelta(days=31*i) for i in range(nMonths) if i % m
 # "idx" is the index of the xtick, and date is the date in the format "YYYY-MM-DD"
 SAVED_YEAR = ""
 def date_tick(idx, date):
-    global SAVED_YEAR
-    months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    global SAVED_YEAR, minInterval, monthRepr
+
+    if monthRepr.upper() == "TEXT":
+        months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    elif monthRepr.upper() == "NUMBER":
+        months = [ str(i) for i in range(1, 13) ]
+    else:
+        raise Exception("monthRepr can only be 'TEXT' or 'NUMBER'.");
+
     dmy = str(date).split("-")[::-1]
-    if int(dmy[2]) != SAVED_YEAR:
-        SAVED_YEAR = int(dmy[2])
+    year = int(dmy[2])
+    if year != SAVED_YEAR:
+        SAVED_YEAR = year
         return dmy[2] + "\n" + months[int(dmy[1]) - 1]
     else:
         return months[int(dmy[1]) - 1]
