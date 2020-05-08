@@ -1,42 +1,67 @@
 require(RColorBrewer);
+require(magick);
+
+img = image_graph(540, 540, res = 96);
+#dev.new(width="540px", height="540px", unit="px");
 
 col = brewer.pal(n=12, "Set3");
 scale = 1;
+count = 0;
 
-for(scale in seq(1, 1.5, length=49)){
-	x = seq(-20, 20, length=30000)/scale;
+for(scale in seq(1, 1.5, length=19)){
+	x = seq(-20, 20, length=3000)/scale;
 	y = (0.5*dnorm(x, -1, 0.5) + 0.5*dnorm(x, 1, 0.5)) / scale;
 	mean = sum(x * y * diff(x[1:2]));
-	plot(x, y, type="l", col=col[4], lwd=5, xlim=c(-10, 10), ylim=c(0, 0.45));
-	print(mean);
+	plot(x, y, type="l", col=col[4], lwd=5, xlab="x", ylab="density", xlim=c(-10, 10), ylim=c(0, 0.45));
 
 	polygon(
 		c(mean-0.5, mean, mean+0.5),
 		c(0, 0.01, 0),
 		col=3);
 
+	polygon(
+		c(mean-0.5, mean, mean+0.5) - 10 + 0.9 - mean,
+		c(0, 0.01, 0) + 0.39 + 0.01,
+		col=3);
+	text(-8.8, 0.393 + 0.01, "mean", pos=4);
+
 	text(-10, 0.43, paste("scale = ", round(scale, digits=2), "x", sep=""), pos=4);
 	polygon(
-		c(-5.7, -3+4*(scale-1), -3+4*(scale-1), -5.7) + 0.1,
+		c(-5.7, -3+4*(scale-1), -3+4*(scale-1), -5.7) + 1.3,
 		c(0.44, 0.44, 0.43, 0.43) - 0.0035,
 		col=col[5], border=F);
+
+	count = count + 1;
+	print(count);
 }
 
-for(scale in seq(1.5, 0.7, length=49)){
-	x = seq(-20, 20, length=30000)/scale;
+for(scale in seq(1.5, 0.7, length=39)){
+	x = seq(-20, 20, length=3000)/scale;
 	y = (0.5*dnorm(x, -1, 0.5) + 0.5*dnorm(x, 1, 0.5)) / scale;
 	mean = sum(x * y * diff(x[1:2]));
-	plot(x, y, type="l", col=col[4], lwd=5, xlim=c(-10, 10), ylim=c(0, 0.45));
-	print(mean);
+	plot(x, y, type="l", col=col[4], lwd=5, xlab="x", ylab="density", xlim=c(-10, 10), ylim=c(0, 0.45));
 
 	polygon(
 		c(mean-0.5, mean, mean+0.5),
 		c(0, 0.01, 0),
 		col=3);
 
+	polygon(
+		c(mean-0.5, mean, mean+0.5) - 10 + 0.9 - mean,
+		c(0, 0.01, 0) + 0.39 + 0.01,
+		col=3);
+	text(-8.8, 0.393 + 0.01, "mean", pos=4);
+
 	text(-10, 0.43, paste("scale = ", round(scale, digits=2), "x", sep=""), pos=4);
 	polygon(
-		c(-5.7, -3+4*(scale-1), -3+4*(scale-1), -5.7) + 0.1,
+		c(-5.7, -3+4*(scale-1), -3+4*(scale-1), -5.7) + 1.3,
 		c(0.44, 0.44, 0.43, 0.43) - 0.0035,
 		col=col[5], border=F);
+
+	count = count + 1;
+	print(count);
 }
+
+dev.off();
+animation <- image_animate(img, fps = 20, optimize = FALSE);
+image_write_gif(animation, "out.gif");
