@@ -9,8 +9,8 @@ scale = 1;
 count = 0;
 
 for(scale in seq(1, 1.5, length=40)){
-	x = seq(-20, 20, length=3000)/scale;
-	y = (0.5*dnorm(x, -1, 0.5) + 0.5*dnorm(x, 1, 0.5)) / scale;
+	x = seq(-20, 20, length=3000);
+	y = (0.5*dnorm(x/scale, -1, 0.5) + 0.5*dnorm(x/scale, 1, 0.5)) / scale;
 	mean = sum(x * y * diff(x[1:2]));
 	plot(x, y, type="l", col=col[4], lwd=5, xlab="x", ylab="density", xlim=c(-10, 10), ylim=c(0, 0.45));
 
@@ -38,8 +38,8 @@ for(scale in seq(1, 1.5, length=40)){
 }
 
 for(scale in seq(1.5, 0.7, length=80)){
-	x = seq(-20, 20, length=3000)/scale;
-	y = (0.5*dnorm(x, -1, 0.5) + 0.5*dnorm(x, 1, 0.5)) / scale;
+	x = seq(-20, 20, length=3000);
+	y = (0.5*dnorm(x/scale, -1, 0.5) + 0.5*dnorm(x/scale, 1, 0.5)) / scale;
 	mean = sum(x * y * diff(x[1:2]));
 	plot(x, y, type="l", col=col[4], lwd=5, xlab="x", ylab="density", xlim=c(-10, 10), ylim=c(0, 0.45));
 
