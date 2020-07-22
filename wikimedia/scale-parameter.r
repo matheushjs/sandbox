@@ -4,15 +4,15 @@ require(stringr);
 #img = image_graph(540, 540, res = 96);
 dev.new(width="540px", height="540px", unit="px");
 
-col = brewer.pal(n=12, "Set3");
+col = 1:12; #brewer.pal(n=12, "Set3");
 scale = 1;
 count = 0;
 
-for(scale in seq(1, 1.5, length=40)){
+for(scale in seq(0.7, 1.5, length=40)){
 	x = seq(-20, 20, length=3000);
-	y = (0.5*dnorm(x/scale, -1, 0.5) + 0.5*dnorm(x/scale, 1, 0.5)) / scale;
+	y = (0.5*dnorm(x/scale/2, -1, 0.5) + 0.5*dnorm(x/scale/2, 1, 0.5)) / scale/2;
 	mean = sum(x * y * diff(x[1:2]));
-	plot(x, y, type="l", col=col[4], lwd=5, xlab="x", ylab="density", xlim=c(-10, 10), ylim=c(0, 0.45));
+	plot(x, y, type="l", col=col[2], lwd=5, xlab="x", ylab="density", xlim=c(-10, 10), ylim=c(0, 0.45));
 
 	polygon(
 		c(mean-0.5, mean, mean+0.5),
@@ -29,7 +29,7 @@ for(scale in seq(1, 1.5, length=40)){
 	polygon(
 		c(-5.7, -3+4*(scale-1), -3+4*(scale-1), -5.7),
 		c(0.44, 0.44, 0.43, 0.43) - 0.0035,
-		col=col[5], border=F);
+		col=col[4], border=F);
 
 	savePlot(paste("frame", str_replace_all(format(count, width=3), " ", "0"), ".png", sep=""));
 
@@ -37,11 +37,11 @@ for(scale in seq(1, 1.5, length=40)){
 	print(count);
 }
 
-for(scale in seq(1.5, 0.7, length=80)){
+for(scale in seq(1.5, 0.7, length=40)){
 	x = seq(-20, 20, length=3000);
-	y = (0.5*dnorm(x/scale, -1, 0.5) + 0.5*dnorm(x/scale, 1, 0.5)) / scale;
+	y = (0.5*dnorm(x/scale/2, -1, 0.5) + 0.5*dnorm(x/scale/2, 1, 0.5)) / scale / 2;
 	mean = sum(x * y * diff(x[1:2]));
-	plot(x, y, type="l", col=col[4], lwd=5, xlab="x", ylab="density", xlim=c(-10, 10), ylim=c(0, 0.45));
+	plot(x, y, type="l", col=col[2], lwd=5, xlab="x", ylab="density", xlim=c(-10, 10), ylim=c(0, 0.45));
 
 	polygon(
 		c(mean-0.5, mean, mean+0.5),
@@ -58,7 +58,7 @@ for(scale in seq(1.5, 0.7, length=80)){
 	polygon(
 		c(-5.7, -3+4*(scale-1), -3+4*(scale-1), -5.7),
 		c(0.44, 0.44, 0.43, 0.43) - 0.0035,
-		col=col[5], border=F);
+		col=col[4], border=F);
 
 	savePlot(paste("frame", str_replace_all(format(count, width=3), " ", "0"), ".png", sep=""));
 
