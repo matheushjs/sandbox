@@ -4,11 +4,11 @@ require(stringr);
 #img = image_graph(540, 540, res = 96);
 dev.new(width="540px", height="540px", unit="px");
 
-col = brewer.pal(n=12, "Set3");
+col = c(1, 2, 3, 2, 4, 6, 7, 8, 9); #brewer.pal(n=12, "Set3");
 scale = 1;
 count = 0;
 
-for(scale in seq(1, 1.5, length=40)){
+for(scale in seq(0.7, 1.5, length=60)){
 	x = seq(0, 120, length=5000);
 	y = dgamma(x/scale, shape=4, scale=6) / scale;
 	mean = sum(x * y * diff(x[1:2]));
@@ -37,7 +37,7 @@ for(scale in seq(1, 1.5, length=40)){
 	print(count);
 }
 
-for(scale in seq(1.5, 0.7, length=80)){
+for(scale in seq(1.5, 0.7, length=60)){
 	x = seq(0, 120, length=5000);
 	y = dgamma(x/scale, shape=4, scale=6) / scale;
 	mean = sum(x * y * diff(x[1:2]));
