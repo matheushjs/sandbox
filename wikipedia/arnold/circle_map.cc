@@ -5,10 +5,10 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/imgproc.hpp>
 
-#define WIDTH 1000
-#define HEIGHT 2000
+#define WIDTH 4000
+#define HEIGHT 8000
 #define ITER_COUNT 8000
-#define ITER_TO_IGNORE 1000
+#define ITER_TO_IGNORE 1
 
 static unsigned char pixels[HEIGHT][WIDTH] = { 0 };
 
@@ -37,7 +37,7 @@ int main(int argc, char *argv[]){
 					double widthPixel = modf(theta + 50.5, &aux) * WIDTH;
 					unsigned char &pixel = pixels[HEIGHT - i - 1][ (size_t) widthPixel];
 					// pixel += ((1<<8 - 1) - pixel) / 1.3;
-					pixel = min(pixel + (int) (15 * exp(-2 * pixel / 255)), 255);
+					pixel = min(pixel + (int) (50 * exp(-2 * pixel / 255)), 255);
 				}
 			}
 
@@ -45,9 +45,18 @@ int main(int argc, char *argv[]){
 		//}
 	}
 
+	for(size_t i = 0; i < HEIGHT; i++){
+		for(size_t j = 0; j < WIDTH; j++){
+			unsigned char *ptr = &pixels[i][j];
+			if( (*ptr) > 0 && (*ptr) < 50)
+				*ptr = 50;
+		}
+	}
+
 	Mat grey(HEIGHT, WIDTH, CV_8UC1, pixels);
 	Mat color(HEIGHT, WIDTH, CV_8UC3, Scalar::all(0));
 	normalize(color, color, 0, 255, NORM_MINMAX, CV_8UC1);
+
 	applyColorMap(grey, color, COLORMAP_INFERNO);
 	//image = imread( argv[1], 1 );
 	//namedWindow("Display Image", WINDOW_FREERATIO);
