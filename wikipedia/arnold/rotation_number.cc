@@ -3,17 +3,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <algorithm>
-#include <opencv2/opencv.hpp>
-#include <opencv2/imgproc.hpp>
 
-#define WIDTH (2*500)
-#define HEIGHT (2*500)
-#define ITER_COUNT 1500
-#define ITER_TO_IGNORE 1300
+#define WIDTH (8*500)
+#define HEIGHT (8*500)
+#define ITER_COUNT 4000
+#define ITER_TO_IGNORE 3800
 
 static float pixels[HEIGHT][WIDTH] = { 0.0f };
 
-using namespace cv;
 using namespace std;
 
 static const long double PI = atanl(1) * (long double) 4;
@@ -24,6 +21,7 @@ long double F(long double theta, long double omega, long double K){
 }
 
 void generate_file(){
+	#pragma omp parallel for
 	for(size_t i = 0; i < HEIGHT; i++){
 		for(size_t j = 0; j < WIDTH; j++){
 			long double theta = rand() / (long double) RAND_MAX;
@@ -66,23 +64,13 @@ void generate_file(){
 	fclose(fp);
 }
 
+/*
 void generate_image(){
 	FILE *fp = fopen("pixels.mat", "r");
 	fread(pixels, sizeof(pixels), 1, fp);
 	fclose(fp);
 
 	printf("%lu\n", sizeof(pixels));
-
-	/*
-	for(size_t i = 0; i < HEIGHT; i++){
-		for(size_t j = 0; j < WIDTH; j++){
-			if(pixels[i][j] > 4){
-				//printf("Eh? %f\n", pixels[i][j]);
-				pixels[i][j] = 0;
-			}
-		}
-	}
-	*/
 
 	float *ptr = (float *) pixels;
 	printf("Max: %f\nMin: %f\n",
@@ -106,9 +94,9 @@ void generate_image(){
 
 	printf("%10.60LG\n", PI);
 }
+*/
 
 int main(int argc, char *argv[]){
 	generate_file();
-	//generate_image();
 	return 0;
 }
