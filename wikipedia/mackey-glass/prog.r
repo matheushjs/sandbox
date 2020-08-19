@@ -47,7 +47,7 @@ rotZ = function(data, theta){
 }
 
 chaotic = function(){
-	params = list(gamma=0.1, beta=0.2, theta=2, n=10, tau=22);
+	params = list(gamma=0.1, beta=0.2, theta=2, n=10, tau=15.5);
 	P0 = 0.1;
 	BY = 0.1;
 	times = seq(-params$tau, 1000, by=BY);
@@ -58,7 +58,7 @@ chaotic = function(){
 	data3 = embedd(out[,2], m=3, d=params$tau / BY);
 	data3 = data3[-c(1:1000),]
 
-	#plot(out / params$theta, which=1, ylim=c(0, 1.5), lwd=2);
+	plot(out / params$theta, which=1, ylim=c(0, 1.5), lwd=2);
 	#plot(data3[,1:2], type="p", col=sequential_hcl("Teal", n=round(nrow(data3)*1.5)));
 
 	data3 = rotZ(rotY(rotX(data3, 15), 15), 0);

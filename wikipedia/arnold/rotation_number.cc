@@ -2,13 +2,14 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <algorithm>
 #include <opencv2/opencv.hpp>
 #include <opencv2/imgproc.hpp>
 
-#define WIDTH 500
-#define HEIGHT 750
-#define ITER_COUNT 1000
-#define ITER_TO_IGNORE 800
+#define WIDTH (2*500)
+#define HEIGHT (2*500)
+#define ITER_COUNT 1500
+#define ITER_TO_IGNORE 1300
 
 static float pixels[HEIGHT][WIDTH] = { 0.0f };
 
@@ -28,8 +29,8 @@ void generate_file(){
 			long double theta = rand() / (long double) RAND_MAX;
 			double aux;
 
-			long double K = (i / (double) HEIGHT) * 4 * PI;
-			long double omega = (j / (double) WIDTH);
+			long double K = (i / (long double) HEIGHT) * 2 * PI;
+			long double omega = (j / (long double) WIDTH);
 
 			long double avgRot = 0;
 			for(size_t k = 0; k < ITER_COUNT; k++){
@@ -45,7 +46,7 @@ void generate_file(){
 			//double widthPixel = modf(theta + 50.5, &aux) * WIDTH;
 			float &pixel = pixels[i][j];
 			// pixel += ((1<<8 - 1) - pixel) / 1.3;
-			pixel = (float) fabsl(avgRot * 10);
+			pixel = (float) fabsl(avgRot);
 		}
 		printf("Row: %lu / %d\n", i+1, HEIGHT);
 	}
@@ -70,13 +71,32 @@ void generate_image(){
 	fread(pixels, sizeof(pixels), 1, fp);
 	fclose(fp);
 
-	Mat grey(HEIGHT, WIDTH, CV_32F, pixels);
+	printf("%lu\n", sizeof(pixels));
+
+	/*
+	for(size_t i = 0; i < HEIGHT; i++){
+		for(size_t j = 0; j < WIDTH; j++){
+			if(pixels[i][j] > 4){
+				//printf("Eh? %f\n", pixels[i][j]);
+				pixels[i][j] = 0;
+			}
+		}
+	}
+	*/
+
+	float *ptr = (float *) pixels;
+	printf("Max: %f\nMin: %f\n",
+		*max_element(ptr, ptr+HEIGHT*WIDTH),
+		*min_element(ptr, ptr+HEIGHT*WIDTH));
+
+	Mat grey(HEIGHT, WIDTH, CV_32FC1, pixels);
 	flip(grey, grey, 0);
-	//grey = -grey;
+
+	//grey = -grey; // To invert colors
 	normalize(grey, grey, 0, 255, NORM_MINMAX, CV_8UC1);
 
 	Mat color(HEIGHT, WIDTH, CV_8UC3, Scalar::all(0));
-	applyColorMap(grey, color, COLORMAP_TWILIGHT);
+	applyColorMap(grey, color, COLORMAP_VIRIDIS);
 
 	//image = imread( argv[1], 1 );
 	namedWindow("Display Image", WINDOW_FREERATIO);
@@ -88,7 +108,7 @@ void generate_image(){
 }
 
 int main(int argc, char *argv[]){
-	//generate_file();
-	generate_image();
+	generate_file();
+	//generate_image();
 	return 0;
 }
