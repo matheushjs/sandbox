@@ -4,8 +4,8 @@ f = function(theta, omega, K) theta + omega + (K / 2 / pi) * sin(2 * pi * theta)
 
 x = runif(min=0, max=1, n=1);
 result = x;
-for(i in 1:100000){
-	x = f(x, omega=1/3, K=1.7);
+for(i in 1:10000){
+	x = f(x, omega=0.5, K=1.3);
 	result = c(result, x);
 }
 
