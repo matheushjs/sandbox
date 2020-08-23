@@ -49,52 +49,10 @@ void generate_file(){
 		printf("Row: %lu / %d\n", i+1, HEIGHT);
 	}
 
-	/*
-	for(size_t i = 0; i < HEIGHT; i++){
-		for(size_t j = 0; j < WIDTH; j++){
-			unsigned char *ptr = &pixels[i][j];
-			if( (*ptr) > 0 && (*ptr) < 50)
-				*ptr = 50;
-		}
-	}
-	*/
-
 	FILE *fp = fopen("pixels.mat", "w+");
 	fwrite(pixels, sizeof(pixels), 1, fp);
 	fclose(fp);
 }
-
-/*
-void generate_image(){
-	FILE *fp = fopen("pixels.mat", "r");
-	fread(pixels, sizeof(pixels), 1, fp);
-	fclose(fp);
-
-	printf("%lu\n", sizeof(pixels));
-
-	float *ptr = (float *) pixels;
-	printf("Max: %f\nMin: %f\n",
-		*max_element(ptr, ptr+HEIGHT*WIDTH),
-		*min_element(ptr, ptr+HEIGHT*WIDTH));
-
-	Mat grey(HEIGHT, WIDTH, CV_32FC1, pixels);
-	flip(grey, grey, 0);
-
-	//grey = -grey; // To invert colors
-	normalize(grey, grey, 0, 255, NORM_MINMAX, CV_8UC1);
-
-	Mat color(HEIGHT, WIDTH, CV_8UC3, Scalar::all(0));
-	applyColorMap(grey, color, COLORMAP_VIRIDIS);
-
-	//image = imread( argv[1], 1 );
-	namedWindow("Display Image", WINDOW_FREERATIO);
-	imshow("Display Image", color);
-	imwrite("rotation_number.jpg", color);
-	waitKey(0);
-
-	printf("%10.60LG\n", PI);
-}
-*/
 
 int main(int argc, char *argv[]){
 	generate_file();
