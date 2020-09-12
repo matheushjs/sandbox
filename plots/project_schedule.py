@@ -3,18 +3,38 @@ import numpy as np
 import datetime as dt
 
 labels = ["1. Formulation", "2. Propose\nMethods", "3. Implement\nMethods", "4. Literature", "5. Articles", "6. Reports"]
-times  = {
+expected = { # Expected schedule
     labels[0]: [(1, 7)], # Must be on format [(from, width), (from, width), ...]
     labels[1]: [(2, 8)],
     labels[2]: [(2, 9)],
-    labels[3]: [(1, 12)],
+    labels[3]: [(1, 11)],
     labels[4]: [(8, 4)],
-    labels[5]: [(5, 2), (11, 2)],
+    labels[5]: [(5, 2), (10, 2)],
+};
+performed = { # The actual schedule that was performed
+              # Must be none if we should print only the expected times
+              # Must have same keys than 'expected'
+    labels[0]: [(1, 6)], # Must be on format [(from, width), (from, width), ...]
+    labels[1]: [(3, 5)],
+    labels[2]: [(3, 5)],
+    labels[3]: [(1, 7)],
+    labels[4]: [(8, 0)],
+    labels[5]: [(6, 2)],
+};
+newExpected = { # The new expected schedule, from now on
+                # Must exist if 'performed' is used
+                # Must have same keys than 'expected'
+    labels[0]: [(1, 0)], # Must be on format [(from, width), (from, width), ...]
+    labels[1]: [(8, 2)],
+    labels[2]: [(8, 2)],
+    labels[3]: [(8, 3)],
+    labels[4]: [(8, 3)],
+    labels[5]: [(10, 2)],
 };
 ywidth      = 0.7 # Width of the horizontal bars
 extraMargin = 0.5 # Top-most and bottom-most margins
-initDate    = dt.date(year=2020, month=2, day=1)
-nMonths     = 12  # Number of months in the gantt chart
+initDate    = dt.date(year=2020, month=3, day=1)
+nMonths     = 10  # Number of months in the gantt chart
 minInterval = 1   # The minimal interval a task can use
 titleSize   = 20  # font size
 yTextPt     = 20  # font size
@@ -39,8 +59,20 @@ fig, ax = plt.subplots(figsize=(16, 8))
 ax.set_facecolor("#d7d7d7")
 
 # Add the horizontal bars
-for idx, label in enumerate(labels):
-    ax.broken_barh(times[label], (idx + 1 - ywidth/2, ywidth), facecolors="#126262", zorder=2, edgecolor="black", linewidth=1.5)
+if performed is not None:
+    for idx, label in enumerate(labels):
+        ax.broken_barh(expected[label], (idx + 1 - ywidth/4, ywidth/2), facecolors="#0000FF22", zorder=2, edgecolor="black", linewidth=1, hatch="//", label="Initial")
+        ax.broken_barh(performed[label], (idx + 1 + ywidth/4, ywidth/2), facecolors="#F1605DFF", zorder=2, edgecolor="black", linewidth=1.5, label="Done")
+        ax.broken_barh(newExpected[label], (idx + 1 + ywidth/4, ywidth/2), facecolors="#F1605DFF", zorder=2, edgecolor="black", linewidth=1.5, label="Projected", hatch="\\\\")
+        if idx == 0:
+            ax.legend(fontsize=16);
+        
+        #ax.broken_barh(expected[label], (idx + 1 - ywidth/2, ywidth), facecolors="#126262", zorder=2, edgecolor="black", linewidth=1.5)
+        #ax.broken_barh(performed[label], (idx + 1 - ywidth/2, ywidth), facecolors="#00000000", zorder=2, edgecolor="black", linewidth=1.5, hatch="///")
+else:
+    for idx, label in enumerate(labels):
+        ax.broken_barh(expected[label], (idx + 1 - ywidth/2, ywidth), facecolors="#126262", zorder=2, edgecolor="black", linewidth=1.5)
+
 
 # Generate all months of the project
 allDates = [ initDate + dt.timedelta(days=31*i) for i in range(nMonths) if i % minInterval == 0 ]
