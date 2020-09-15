@@ -61,9 +61,9 @@ ax.set_facecolor("#d7d7d7")
 # Add the horizontal bars
 if performed is not None:
     for idx, label in enumerate(labels):
-        ax.broken_barh(expected[label], (idx + 1 - ywidth/4, ywidth/2), facecolors="#0000FF22", zorder=2, edgecolor="black", linewidth=1, hatch="//", label="Initial")
-        ax.broken_barh(performed[label], (idx + 1 + ywidth/4, ywidth/2), facecolors="#F1605DFF", zorder=2, edgecolor="black", linewidth=1.5, label="Done")
-        ax.broken_barh(newExpected[label], (idx + 1 + ywidth/4, ywidth/2), facecolors="#F1605DFF", zorder=2, edgecolor="black", linewidth=1.5, label="Projected", hatch="\\\\")
+        ax.broken_barh(expected[label], (idx + 1 - ywidth/4, ywidth/2), facecolors="#0000FF22", zorder=2, edgecolor="#00000077", linewidth=1, hatch="//", label="Initial")
+        ax.broken_barh(performed[label], (idx + 1 + ywidth/4, ywidth/2), facecolors="#F1605DFF", zorder=2, edgecolor="#00000055", linewidth=1.5, label="Done")
+        ax.broken_barh(newExpected[label], (idx + 1 + ywidth/4, ywidth/2), facecolors="#F1605DFF", zorder=2, edgecolor="#00000055", linewidth=1.5, label="Projected", hatch="\\\\")
         if idx == 0:
             ax.legend(fontsize=16);
         
