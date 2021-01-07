@@ -15,22 +15,22 @@ performed = { # The actual schedule that was performed
               # Must be none if we should print only the expected times
               # Must have same keys than 'expected'
     labels[0]: [(1, 6)], # Must be on format [(from, width), (from, width), ...]
-    labels[1]: [(3, 5)],
-    labels[2]: [(3, 5)],
-    labels[3]: [(1, 7)],
-    labels[4]: [(8, 0)],
-    labels[5]: [(6, 2)],
+    labels[1]: [(3, 7)],
+    labels[2]: [(3, 7)],
+    labels[3]: [(1, 10)],
+    labels[4]: [(8, 3)],
+    labels[5]: [(6, 2), (10,1)],
 };
-newExpected = { # The new expected schedule, from now on
+newExpected = None #{ # The new expected schedule, from now on
                 # Must exist if 'performed' is used
                 # Must have same keys than 'expected'
-    labels[0]: [(1, 0)], # Must be on format [(from, width), (from, width), ...]
-    labels[1]: [(8, 2)],
-    labels[2]: [(8, 2)],
-    labels[3]: [(8, 3)],
-    labels[4]: [(8, 3)],
-    labels[5]: [(10, 2)],
-};
+    #labels[0]: [(1, 0)], # Must be on format [(from, width), (from, width), ...]
+    #labels[1]: [(1, 0)],
+    #labels[2]: [(1, 0)],
+    #labels[3]: [(1, 0)],
+    #labels[4]: [(1, 0)],
+    #labels[5]: [(1, 0)],
+#};
 ywidth      = 0.7 # Width of the horizontal bars
 extraMargin = 0.5 # Top-most and bottom-most margins
 initDate    = dt.date(year=2020, month=3, day=1)
@@ -63,7 +63,8 @@ if performed is not None:
     for idx, label in enumerate(labels):
         ax.broken_barh(expected[label], (idx + 1 - ywidth/4, ywidth/2), facecolors="#0000FF22", zorder=2, edgecolor="#00000077", linewidth=1, hatch="//", label="Initial")
         ax.broken_barh(performed[label], (idx + 1 + ywidth/4, ywidth/2), facecolors="#F1605DFF", zorder=2, edgecolor="#00000055", linewidth=1.5, label="Done")
-        ax.broken_barh(newExpected[label], (idx + 1 + ywidth/4, ywidth/2), facecolors="#F1605DFF", zorder=2, edgecolor="#00000055", linewidth=1.5, label="Projected", hatch="\\\\")
+        if newExpected is not None:
+            ax.broken_barh(newExpected[label], (idx + 1 + ywidth/4, ywidth/2), facecolors="#F1605DFF", zorder=2, edgecolor="#00000055", linewidth=1.5, label="Projected", hatch="\\\\")
         if idx == 0:
             ax.legend(fontsize=16);
         
